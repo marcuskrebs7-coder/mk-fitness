@@ -66,9 +66,12 @@ button:disabled{opacity:.5;cursor:default}
 .row>*{flex:1 1 140px;min-width:0}
 .panel{background:var(--surface);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .prog{display:flex;flex-direction:column;gap:4px;text-align:left;font-weight:400;padding:14px;width:100%}
-.prog b{font-family:var(--display);font-size:23px;font-weight:600}
+.prog b{font-family:var(--display);font-size:23px;font-weight:600;color:var(--ink)}
 .prog span{color:var(--muted);font-size:15px}
-.prog{gap:0;padding:12px 14px;border-width:2px}
+.prog{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-width:2px}
+.prog .ptxt{display:flex;flex-direction:column;min-width:0}
+.prog .anim{flex:0 0 60px}
+.prog .anim svg{background:none;width:60px}
 .prog[aria-pressed="true"]{border-color:var(--accent);background:var(--work-bg)}
 .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor;align-self:flex-start}
 .pill.ok{color:var(--ok)} .pill.part{color:var(--rest)} .pill.acc{color:var(--accent)}
@@ -194,6 +197,7 @@ const EX={
  pushFloor:{n:'Push-up på gulvet',adv:1,tips:['Hænderne under skuldrene, kroppen i en lige linje.','Sænk brystet mod gulvet med albuerne skråt bagud.','Kan du ikke holde linjen, så brug bordpladen i stedet.']}
 };
 const SHORT={p1:'Kettlebell · rolig start',p2:'Kettlebell · 5 runder i eget tempo',p3:'Kettlebell · 30 sek. arbejde, 30 sek. pause',p4:'Håndvægte · op til 3 runder',p5:'Kun kroppen · op til 3 runder'},ui={};
+const PICON={p1:'deadlift',p2:'swing',p3:'goblet',p4:'press',p5:'lunge'};
 const P2EX=[['rows','Rows',5],['cleans','Cleans',5],['swings','Swings',5],['goblet','Goblet Squats',5],['curls','Bicep Curls',5],['triceps','Tricep Extensions',5],['pullovers','Pullovers',5],['halos','Alternating Halos',10],['pushups','Push-ups',10]];
 const O=['orig','Som i videoteksten'],SK=['skip','Spring over'],DL=['deadlift','Erstat med dødløft'];
 const P2ALT={rows:[O,SK],cleans:[O,DL,SK],swings:[O,DL,SK],goblet:[O,['squat','Squat uden vægt'],SK],curls:[O,SK],triceps:[O,SK],pullovers:[O,SK],halos:[O,SK],
@@ -204,7 +208,7 @@ function defaults(){const ex={};P2EX.forEach(e=>ex[e[0]]={w:e[0]==='pushups'?'Kr
   p2:{rest:150,warm:false,cool:false,rowVar:'',rowCount:'',cleanVar:'',cleanCount:'',ex},p3:{dl:'10 kg',gs:'10 kg'},p4:{w:'5 kg',rest:90},p5:{pu:'pushCounter',rest:60}}}
 
 /* HOSTED = installérbar web-app på egen adresse (bygget med build.ps1); ellers Claude-siden */
-const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-1958';
+const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2003';
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 /* ---------- lagring ---------- */
 const LS='kb-traening-v1';
@@ -439,6 +443,7 @@ const AN={
  lunge:{d:1.4,base:{foot:[112,150],ua:0,fa:10},fr:[{t2:0,s2:0},{t:75,s:0,t2:-10,s2:-80}]},
  bridge:{d:1.4,base:{ua:90,fa:90},fr:[{hip:[120,141],to:-90,t:135,s:15},{hip:[118,118],to:-117.6,t:98,s:2}]},
  plank:{d:1.8,base:{foot:[30,149],ua:0,fa:90},fr:[{t:-76,s:-76,to:76},{t:-75,s:-75,to:75}]},
+ rest:{d:2.2,fr:[{ua:2,fa:6},{to:-1.5,ua:5,fa:12}]},
  halo:{d:.9,fr:[{hand:[108,16],kb:[0,0]},{hand:[92,3],kb:[0,0]},{hand:[74,20],kb:[0,0]},{hand:[90,6],kb:[0,0]}]}
 };
 function normP(p){const q=Object.assign({t:0,s:0,to:0,ua:0,fa:0},p);['t2:t','s2:s','ua2:ua','fa2:fa'].forEach(x=>{const[a,b]=x.split(':');if(q[a]==null)q[a]=q[b]});
@@ -459,8 +464,9 @@ function kbOff(m,j){if(m==='g')return[0,12];if(m==='arm'){const dx=j.h1[0]-j.e1[
 let anims=[];
 function mountAnims(){anims=[];document.querySelectorAll('.anim[data-ex]').forEach(el=>{const A=AN[el.dataset.ex];if(!A){el.hidden=true;return}
  const L=c=>`<line class="${c}"/>`;
- const svg=`<svg viewBox="0 -30 200 190" role="img" aria-label="Forenklet animation: ${esc(EX[el.dataset.ex].n)}">${GR}${A.props||''}${L('bk')+L('bk')+L('bk')+L('bk')}${L('fg')+L('fg')+L('fg')}<circle class="hd" r="8"/><g class="kbg"><line class="kbh"/><circle class="kbc" r="9"/></g>${L('fg')+L('fg')}</svg>`;
- el.innerHTML=el.dataset.mini?svg+`<div class="cap">${esc(el.dataset.cap||'')}</div>`:svg+`
+ const deco=el.dataset.mini&&!el.dataset.cap;
+ const svg=`<svg viewBox="0 -30 200 190" ${deco?'aria-hidden="true"':`role="img" aria-label="Forenklet animation: ${esc((EX[el.dataset.ex]||{n:'Hvil'}).n)}"`}>${GR}${A.props||''}${L('bk')+L('bk')+L('bk')+L('bk')}${L('fg')+L('fg')+L('fg')}<circle class="hd" r="8"/><g class="kbg"><line class="kbh"/><circle class="kbc" r="9"/></g>${L('fg')+L('fg')}</svg>`;
+ el.innerHTML=el.dataset.mini?svg+(deco?'':`<div class="cap">${esc(el.dataset.cap)}</div>`):svg+`
  <div class="ab"><button type="button" data-act="apause" aria-pressed="false">Pause</button><button type="button" data-act="aslow" aria-pressed="false">Langsomt</button></div>
  <div class="cap">Forenklet bevægelsesguide – ikke en præcis gengivelse${el.dataset.note?'. '+esc(el.dataset.note):''}</div>`;
  const a={el,A,t:0,last:null,paused:matchMedia('(prefers-reduced-motion: reduce)').matches,slow:false,ln:el.querySelectorAll('svg>line:not(.gr)'),hd:el.querySelector('.hd'),kb:el.querySelector('.kbg')};
@@ -519,7 +525,7 @@ function homeHtml(){const st=DB.settings,pid=st.pid;let cfg='';
   ${miss.length?`<p class="note">Vælg først: ${miss.join(', ')}.</p>`:''}`}
  const blocked=pid==='p2'&&p2Missing(st.p2).length>0;
  return `<header><h1>Kettlebell Træning</h1></header>
- <div class="stack">${Object.keys(P).map(k=>`<button type="button" class="prog" data-act="pick" data-id="${k}" aria-pressed="${k===pid}"><b>${P[k].n}</b><span>${SHORT[k]}</span></button>`).join('')}</div>
+ <div class="stack">${Object.keys(P).map(k=>`<button type="button" class="prog" data-act="pick" data-id="${k}" aria-pressed="${k===pid}"><span class="ptxt"><b>${P[k].n}</b><span>${SHORT[k]}</span></span><span class="anim" data-mini="1" data-ex="${PICON[k]}"></span></button>`).join('')}</div>
  ${pending?`<div class="panel"><h3>Fortsæt afbrudt træning</h3><p>${esc(P[pending.S.pid].n)}${pending.S.finished?' – færdig, men ikke gemt':(s=>s?' – '+esc(stepName(s))+(s.round?', runde '+s.round+' af '+s.rounds:''):'')(pending.S.steps[pending.S.i])}. Afbrudt ${new Date(pending.at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}.</p>
   <div class="row"><button type="button" class="primary" data-act="resumeSaved">Fortsæt</button><button type="button" class="danger" data-act="dropSaved">Kassér</button></div></div>`:''}
  <button type="button" class="big primary" data-act="open"${blocked?' disabled':''}>Åbn programmet</button>
@@ -558,7 +564,7 @@ function renderWorkout(){const app=document.getElementById('app'),st=cur();if(!s
   :S.status==='paused'?'<button type="button" class="big primary" data-act="resume">Fortsæt</button>'
   :st.type==='reps'?'<button type="button" class="big primary" data-act="done">Færdig – næste</button>'
   :`<button type="button" class="big" disabled>${rest?'Pause':'Arbejd'} – skifter selv</button>`;
- const aex=rest?(nwx?nwx.ex:''):st.ex;
+ const aex=rest?(nwx?nwx.ex:'rest'):st.ex;
  const tipsBlock=(ex,note,label)=>AN[ex]?`${label?`<div class="cap">${label}</div>`:''}<ul class="tips">${EX[ex].tips.map(t=>`<li>${t}</li>`).join('')}</ul>
   <div class="ab"><button type="button" data-act="apause" aria-pressed="false">Pause animation</button><button type="button" data-act="aslow" aria-pressed="false">Langsomt</button></div>
   <div class="cap">Animationen er en forenklet bevægelsesguide – ikke en præcis gengivelse${note?'. '+esc(note):''}</div>`:'';
@@ -566,7 +572,7 @@ function renderWorkout(){const app=document.getElementById('app'),st=cur();if(!s
  app.innerHTML=`<div class="stack ${rest?'rest':'work'}">
  <div class="wtop"><button type="button" class="lnk" data-act="end">‹ Afslut</button><div class="tot" id="tot"></div></div>
  <div class="stepcard"><div class="eyebrow">${rd}${st.orig?` · video: ${st.orig}`:''}</div><h2>${esc(stepName(st))}</h2><div class="meta">${chips}</div>
-  <div class="tv">${AN[aex]?`<div class="anim" data-mini="1" data-ex="${aex}" data-cap="${rest?'Næste: '+esc(stepName(nwx)):'Forenklet guide'}"></div>`:''}<div class="tcol"><div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div></div></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}</div>
+  <div class="tv">${AN[aex]?`<div class="anim" data-mini="1" data-ex="${aex}" data-cap="${rest?(nwx?'Næste: '+esc(stepName(nwx)):'Hvil'):'Forenklet guide'}"></div>`:''}<div class="tcol"><div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div></div></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}</div>
  ${big}
  <div class="ctl"><button type="button" data-act="pause"${S.status==='running'?'':' disabled'}>Pause</button><button type="button" data-act="skip"${run?'':' disabled'}>Spring over</button>${partner()?'<button type="button" data-act="swap">Byt side</button>':''}</div>
  <p class="nextl">Næste: ${nx?esc(stepLine(nx)):'træningen er slut'}</p>
