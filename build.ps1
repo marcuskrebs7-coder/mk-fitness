@@ -27,25 +27,33 @@ $head = @'
 Copy-Item (Join-Path $root 'web\sw.js'), (Join-Path $root 'web\manifest.webmanifest') $docs -Force
 [IO.File]::WriteAllText((Join-Path $docs '.nojekyll'), '', $utf8)
 
-# Ikoner tegnes kun, hvis de mangler
+# Ikon K "Stemplet": MK i en ring paa moerk bund. Tegnes forfra ved hvert byg.
 Add-Type -AssemblyName System.Drawing
 function New-Icon([int]$size, [string]$name, [double]$scale) {
   $path = Join-Path $docs $name
-  if (Test-Path $path) { return }
   $bmp = New-Object System.Drawing.Bitmap $size, $size
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'
-  $g.Clear([System.Drawing.Color]::FromArgb(10, 95, 138))
+  $g.TextRenderingHint = 'AntiAliasGridFit'
+  $g.Clear([System.Drawing.Color]::FromArgb(21, 33, 43))
+  $blue = [System.Drawing.Color]::FromArgb(77, 181, 230)
+  $s = $size * $scale; $c = $size / 2
+  $r1 = $s * 0.40; $r2 = $s * 0.345
+  $pen1 = New-Object System.Drawing.Pen $blue, ([single]($s * 0.024))
+  $pen2 = New-Object System.Drawing.Pen $blue, ([single]($s * 0.008))
+  $g.DrawEllipse($pen1, [single]($c - $r1), [single]($c - $r1), [single]($r1 * 2), [single]($r1 * 2))
+  $g.DrawEllipse($pen2, [single]($c - $r2), [single]($c - $r2), [single]($r2 * 2), [single]($r2 * 2))
+  $fmt = New-Object System.Drawing.StringFormat
+  $fmt.Alignment = 'Center'; $fmt.LineAlignment = 'Center'
+  $f1 = New-Object System.Drawing.Font 'Segoe UI', ([single]($s * 0.27)), ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+  $f2 = New-Object System.Drawing.Font 'Segoe UI', ([single]($s * 0.075)), ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
   $white = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::White)
-  $s = $size * $scale; $o = ($size - $s) / 2
-  $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), ($s * 0.07)
-  $g.DrawArc($pen, [single]($o + $s * 0.34), [single]($o + $s * 0.14), [single]($s * 0.32), [single]($s * 0.36), 180, 180)
-  $g.DrawLine($pen, [single]($o + $s * 0.34), [single]($o + $s * 0.32), [single]($o + $s * 0.34), [single]($o + $s * 0.45))
-  $g.DrawLine($pen, [single]($o + $s * 0.66), [single]($o + $s * 0.32), [single]($o + $s * 0.66), [single]($o + $s * 0.45))
-  $g.FillEllipse($white, [single]($o + $s * 0.22), [single]($o + $s * 0.34), [single]($s * 0.56), [single]($s * 0.54))
+  $bb = New-Object System.Drawing.SolidBrush $blue
+  $g.DrawString('MK', $f1, $white, [single]$c, [single]($c - $s * 0.035), $fmt)
+  $g.DrawString('f i t n e s s', $f2, $bb, [single]$c, [single]($c + $s * 0.19), $fmt)
   $g.Dispose(); $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
 }
 New-Icon 192 'icon-192.png' 1.0
 New-Icon 512 'icon-512.png' 1.0
-New-Icon 512 'icon-maskable.png' 0.7
+New-Icon 512 'icon-maskable.png' 0.72
 Write-Output "Bygget version $version i $docs"

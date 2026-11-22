@@ -208,7 +208,7 @@ function defaults(){const ex={};P2EX.forEach(e=>ex[e[0]]={w:e[0]==='pushups'?'Kr
   p2:{rest:150,warm:false,cool:false,rowVar:'',rowCount:'',cleanVar:'',cleanCount:'',ex},p3:{dl:'10 kg',gs:'10 kg'},p4:{w:'5 kg',rest:90},p5:{pu:'pushCounter',rest:60}}}
 
 /* HOSTED = installérbar web-app på egen adresse (bygget med build.ps1); ellers Claude-siden */
-const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2003';
+const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2008';
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 /* ---------- lagring ---------- */
 const LS='kb-traening-v1';
