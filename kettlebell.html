@@ -91,8 +91,13 @@ details>summary{cursor:pointer;font-weight:600;padding:6px 0}
 /* animation */
 .anim{display:flex;flex-direction:column;gap:6px;align-items:center}
 .anim svg{width:100%;max-width:300px;height:auto;background:var(--bg);border-radius:10px}
-.anim .ab{display:flex;gap:8px}
-.anim .ab button{min-height:40px;padding:6px 12px;font-size:14px}
+.ab{display:flex;gap:8px;justify-content:center}
+.ab button{min-height:40px;padding:6px 12px;font-size:14px}
+.tv{display:flex;align-items:center;gap:8px;width:100%}
+.tv .anim{flex:0 0 45%;min-width:0}
+.tv .anim svg{background:var(--surface)}
+.tcol{flex:1;min-width:0}
+.tv .timer{font-size:clamp(56px,19vw,104px)}
 .anim figcaption,.cap{font-size:12.5px;color:var(--muted);text-align:center}
 .fg{stroke:var(--fig);stroke-width:6;stroke-linecap:round;fill:none}
 .bk{stroke:var(--fig2);stroke-width:6;stroke-linecap:round;fill:none}
@@ -398,11 +403,12 @@ function kbOff(m,j){if(m==='g')return[0,12];if(m==='arm'){const dx=j.h1[0]-j.e1[
 let anims=[];
 function mountAnims(){anims=[];document.querySelectorAll('.anim[data-ex]').forEach(el=>{const A=AN[el.dataset.ex];if(!A){el.hidden=true;return}
  const L=c=>`<line class="${c}"/>`;
- el.innerHTML=`<svg viewBox="0 0 200 160" role="img" aria-label="Forenklet animation: ${esc(EX[el.dataset.ex].n)}">${GR}${A.props||''}${L('bk')+L('bk')+L('bk')+L('bk')}${L('fg')+L('fg')+L('fg')}<circle class="hd" r="8"/><g class="kbg"><line class="kbh"/><circle class="kbc" r="9"/></g>${L('fg')+L('fg')}</svg>
+ const svg=`<svg viewBox="0 0 200 160" role="img" aria-label="Forenklet animation: ${esc(EX[el.dataset.ex].n)}">${GR}${A.props||''}${L('bk')+L('bk')+L('bk')+L('bk')}${L('fg')+L('fg')+L('fg')}<circle class="hd" r="8"/><g class="kbg"><line class="kbh"/><circle class="kbc" r="9"/></g>${L('fg')+L('fg')}</svg>`;
+ el.innerHTML=el.dataset.mini?svg+`<div class="cap">${esc(el.dataset.cap||'')}</div>`:svg+`
  <div class="ab"><button type="button" data-act="apause" aria-pressed="false">Pause</button><button type="button" data-act="aslow" aria-pressed="false">Langsomt</button></div>
  <div class="cap">Forenklet bevægelsesguide – ikke en præcis gengivelse${el.dataset.note?'. '+esc(el.dataset.note):''}</div>`;
  const a={el,A,t:0,last:null,paused:matchMedia('(prefers-reduced-motion: reduce)').matches,slow:false,ln:el.querySelectorAll('svg>line:not(.gr)'),hd:el.querySelector('.hd'),kb:el.querySelector('.kbg')};
- if(a.paused){const b=el.querySelector('[data-act=apause]');b.textContent='Afspil';b.setAttribute('aria-pressed','true')}
+ if(a.paused){const b=el.querySelector('[data-act=apause]');if(b){b.textContent='Afspil';b.setAttribute('aria-pressed','true')}else a.paused=false}
  anims.push(a);draw(a)})}
 function setL(l,p,q){l.setAttribute('x1',p[0].toFixed(1));l.setAttribute('y1',p[1].toFixed(1));l.setAttribute('x2',q[0].toFixed(1));l.setAttribute('y2',q[1].toFixed(1))}
 function draw(a){const fr=a.A.fr,n=fr.length,T=a.t/a.A.d,i=Math.floor(T)%n,u0=T-Math.floor(T),u=u0*u0*(3-2*u0),F=fr[i],G=fr[(i+1)%n],j=solve(lerpP(F,G,u)),l=a.ln;
@@ -490,18 +496,22 @@ function renderWorkout(){const app=document.getElementById('app'),st=cur();if(!s
   :S.status==='paused'?'<button type="button" class="big primary" data-act="resume">Fortsæt</button>'
   :st.type==='reps'?'<button type="button" class="big primary" data-act="done">Færdig – næste</button>'
   :`<button type="button" class="big" disabled>${rest?'Pause':'Arbejd'} – skifter selv</button>`;
+ const aex=rest?(nwx?nwx.ex:''):st.ex;
+ const tipsBlock=(ex,note,label)=>AN[ex]?`${label?`<div class="cap">${label}</div>`:''}<ul class="tips">${EX[ex].tips.map(t=>`<li>${t}</li>`).join('')}</ul>
+  <div class="ab"><button type="button" data-act="apause" aria-pressed="false">Pause animation</button><button type="button" data-act="aslow" aria-pressed="false">Langsomt</button></div>
+  <div class="cap">Animationen er en forenklet bevægelsesguide – ikke en præcis gengivelse${note?'. '+esc(note):''}</div>`:'';
  const run=S.status!=='ready',p2note=S.pid==='p2'&&!rest?'Videoen har ikke kunnet kontrolleres, så dette er en almindelig udførelse':'';
  app.innerHTML=`<div class="stack ${rest?'rest':'work'}">
  <div class="wtop"><div><b>${P[S.pid].n}</b>${esc(st.phase||'')}</div><div class="tot" id="tot"></div></div>
  <div class="stepcard"><div class="eyebrow">${rd}${st.orig?` · video: ${st.orig}`:''}</div><h2>${esc(stepName(st))}</h2><div class="meta">${chips}</div>
-  <div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}</div>
+  <div class="tv">${AN[aex]?`<div class="anim" data-mini="1" data-ex="${aex}" data-cap="${rest?'Næste: '+esc(stepName(nwx)):'Forenklet guide'}"></div>`:''}<div class="tcol"><div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div></div></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}</div>
  ${big}
  <div class="ctl"><button type="button" data-act="pause"${S.status==='running'?'':' disabled'}>Pause</button><button type="button" data-act="extra"${run?'':' disabled'}>Ekstra pause 30 sek.</button>
   <button type="button" data-act="swap"${partner()?'':' disabled'}>Byt side</button><button type="button" data-act="skip"${run?'':' disabled'}>Spring over</button>
   <button type="button" data-act="easier"${run&&easier(st)?'':' disabled'}>Vis en lettere øvelse</button><button type="button" data-act="repeat"${run?'':' disabled'}>Gentag vejledning</button></div>
  <div class="next"><b>Næste</b>${nx?esc(stepLine(nx)):'Træningen er slut'}</div>
  <button type="button" id="mic" class="mic" data-act="mic" aria-pressed="false">${micHtml()}</button>
- <div class="panel">${rest?(nwx?animBlock(nwx.ex,S.pid==='p2'?'Almindelig udførelse, ikke kontrolleret mod videoen':'','Næste øvelse: '+esc(stepName(nwx))):'<p class="hint">Træk vejret roligt.</p>'):animBlock(st.ex,p2note)}</div>
+ <div class="panel">${rest?(nwx?tipsBlock(nwx.ex,S.pid==='p2'?'Almindelig udførelse, ikke kontrolleret mod videoen':'','Næste øvelse: '+esc(stepName(nwx))):'<p class="hint">Træk vejret roligt.</p>'):tipsBlock(st.ex,p2note)}</div>
  <div class="row"><label class="chk"><input type="checkbox" id="f-sound" data-cfg="sound"${DB.settings.sound?' checked':''}> Lyd</label>
   <label class="chk"><input type="checkbox" id="f-speak" data-cfg="speak"${DB.settings.speak?' checked':''}> Tale</label></div>
  <div class="row"><button type="button" data-act="reset">Nulstil</button><button type="button" data-act="end">Afslut</button></div>
@@ -587,7 +597,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='save'){saveSession(b.dataset.s)}
  else if(a==='discard'){twoTap('discard',b,'Tryk igen for at kassere',()=>{clearInterval(tickT);clearSnap();S=null;view='home';render();toast('Kasseret – intet gemt')})}
  else if(a==='del'){twoTap('del'+b.dataset.id,b,'Tryk igen for at slette',()=>{const id=b.dataset.id;DB.sessions=DB.sessions.filter(s=>s.id!==id);DB.deleted.push(id);persist();render()})}
- else if(a==='apause'||a==='aslow'){const an=anims.find(x=>x.el===b.closest('.anim'));if(!an)return;
+ else if(a==='apause'||a==='aslow'){const an=anims.find(x=>x.el===b.closest('.anim'))||anims[0];if(!an)return;
   if(a==='apause'){an.paused=!an.paused;b.textContent=an.paused?'Afspil':'Pause';b.setAttribute('aria-pressed',an.paused)}else{an.slow=!an.slow;b.setAttribute('aria-pressed',an.slow);b.textContent=an.slow?'Normal fart':'Langsomt'}}
  else if(a==='export'){const t=exportText(),io=document.getElementById('io');io.value=t;if(HOSTED){dl('kettlebell-historik.json',t,'application/json');toast('Fil hentet');return}const d=await use('downloads');
   if(d){try{await d.save({filename:'kettlebell-historik.json',data:t});toast('Fil gemt')}catch(er){toast('Ingen fil gemt. Teksten står i feltet og kan kopieres.')}}else toast('Teksten står i feltet. Kopiér og gem den.')}
