@@ -1,7 +1,7 @@
 {
-  "name": "Kettlebell Træning",
-  "short_name": "Kettlebell",
-  "description": "Tre kettlebell-programmer med timer, stemmestyring og historik.",
+  "name": "MK Fitness",
+  "short_name": "MK Fitness",
+  "description": "Træningsprogrammer med kettlebell, håndvægte og kropsvægt – med timer, stemmestyring og historik.",
   "lang": "da",
   "start_url": "./",
   "scope": "./",

@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
-<body><title>Kettlebell Træning</title>
+<body><title>MK Fitness</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
 <style>
@@ -524,7 +524,7 @@ function homeHtml(){const st=DB.settings,pid=st.pid;let cfg='';
   <button type="button" data-act="p2reset">Nulstil til videoteksten</button></div>
   ${miss.length?`<p class="note">Vælg først: ${miss.join(', ')}.</p>`:''}`}
  const blocked=pid==='p2'&&p2Missing(st.p2).length>0;
- return `<header><h1>Kettlebell Træning</h1></header>
+ return `<header><h1>MK Fitness</h1></header>
  <div class="stack">${Object.keys(P).map(k=>`<button type="button" class="prog" data-act="pick" data-id="${k}" aria-pressed="${k===pid}"><span class="ptxt"><b>${P[k].n}</b><span>${SHORT[k]}</span></span><span class="anim" data-mini="1" data-ex="${PICON[k]}"></span></button>`).join('')}</div>
  ${pending?`<div class="panel"><h3>Fortsæt afbrudt træning</h3><p>${esc(P[pending.S.pid].n)}${pending.S.finished?' – færdig, men ikke gemt':(s=>s?' – '+esc(stepName(s))+(s.round?', runde '+s.round+' af '+s.rounds:''):'')(pending.S.steps[pending.S.i])}. Afbrudt ${new Date(pending.at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}.</p>
   <div class="row"><button type="button" class="primary" data-act="resumeSaved">Fortsæt</button><button type="button" class="danger" data-act="dropSaved">Kassér</button></div></div>`:''}
@@ -545,14 +545,14 @@ function remHtml(){const r=DB.settings.rem,DD=[[1,'Ma'],[2,'Ti'],[3,'On'],[4,'To
 function checkRem(){try{const r=DB.settings.rem;if(!HOSTED||!r.on||S||!('Notification' in window)||Notification.permission!=='granted')return;
  const n=new Date(),hm=r.time.split(':').map(Number),late=n.getHours()*60+n.getMinutes()-(hm[0]*60+hm[1]),key=n.toDateString();
  if(!r.days.includes(n.getDay())||late<0||late>45||localStorage.getItem(LS+'-rem')===key)return;localStorage.setItem(LS+'-rem',key);
- const o={body:'Dagens kettlebell-træning venter. 20 minutter er nok.',icon:'icon-192.png',badge:'icon-192.png',tag:'kb-rem'};
+ const o={body:'Dagens træning venter. 20 minutter er nok.',icon:'icon-192.png',badge:'icon-192.png',tag:'kb-rem'};
  navigator.serviceWorker.ready.then(g=>g.showNotification('Tid til træning',o)).catch(()=>{try{new Notification('Tid til træning',o)}catch(e){}})}catch(e){}}
 function remIcs(){const r=DB.settings.rem,BY=['SU','MO','TU','WE','TH','FR','SA'],p=x=>String(x).padStart(2,'0'),d=new Date(),hm=r.time.split(':').map(Number);
  for(let i=0;i<8&&!r.days.includes(d.getDay());i++)d.setDate(d.getDate()+1);
  const day=''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()),st=new Date().toISOString().replace(/[-:]|\.\d+/g,'');
  return['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Kettlebell Traening//DA','BEGIN:VEVENT','UID:kb-'+Date.now()+'@kettlebell-traening','DTSTAMP:'+st,
-  'DTSTART:'+day+'T'+p(hm[0])+p(hm[1])+'00','DURATION:PT25M','RRULE:FREQ=WEEKLY;BYDAY='+r.days.map(x=>BY[x]).join(','),'SUMMARY:Kettlebell-træning','URL:'+location.href.split('#')[0],
-  'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Tid til kettlebell-træning','TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n')}
+  'DTSTART:'+day+'T'+p(hm[0])+p(hm[1])+'00','DURATION:PT25M','RRULE:FREQ=WEEKLY;BYDAY='+r.days.map(x=>BY[x]).join(','),'SUMMARY:MK Fitness – træning','URL:'+location.href.split('#')[0],
+  'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Tid til træning','TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n')}
 function checkVersion(){if(!HOSTED||S)return;fetch('version.json',{cache:'no-store'}).then(r=>r.json()).then(v=>{let tried='';try{tried=sessionStorage.getItem('kb-upd')||''}catch(e){}
  if(v&&v.v&&v.v!==VERSION&&tried!==v.v){try{sessionStorage.setItem('kb-upd',v.v)}catch(e){}location.reload()}}).catch(()=>{})}
 function animBlock(ex,note,label){return AN[ex]?`${label?`<div class="cap">${label}</div>`:''}<div class="anim" data-ex="${ex}"${note?` data-note="${esc(note)}"`:''}></div><ul class="tips">${EX[ex].tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
