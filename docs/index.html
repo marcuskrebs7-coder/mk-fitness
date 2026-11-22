@@ -76,6 +76,16 @@ button:disabled{opacity:.5;cursor:default}
 .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor;align-self:flex-start}
 .pill.ok{color:var(--ok)} .pill.part{color:var(--rest)} .pill.acc{color:var(--accent)}
 .fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);min-width:0}
+.week{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:15px;flex-wrap:wrap}
+.week b{color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block;margin-right:4px}
+.dot.on{background:var(--accent)}
+.chart{width:100%;height:auto}
+.chart .bar{fill:var(--fig2)}
+.chart .bar.cur{fill:var(--accent)}
+.chart .goal{stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4}
+.chart text{font-size:11px;fill:var(--muted);text-anchor:middle}
+.chart .ct{fill:var(--ink);font-weight:600}
 .days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .days button{padding:6px 0;min-height:46px}
 .days button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -167,7 +177,10 @@ const P={
  p2:{n:'Originalt videoprogram',d:'5 runder af et kompleks med 9 øvelser. Gentagelsesstyret – varigheden afhænger af dit tempo.'},
  p3:{n:'Enkle intervaller – 20 minutter',d:'30 sek. arbejde og 30 sek. pause. Fire stationer, fire runder. Eget forslag til variation – ikke et officielt ACE- eller StrongFirst-program.'},
  p4:{n:'Håndvægte – 20 minutter',d:'3 min. opvarmning, 16 min. med op til tre runder af fem øvelser med håndvægte og 1 min. rolig gang. Eget forslag, ikke fra kilderne.',tag:'Håndvægte'},
- p5:{n:'Uden vægte – 20 minutter',d:'3 min. opvarmning, 16 min. med op til tre runder kun med kroppen og 1 min. rolig gang. Eget forslag, ikke fra kilderne.',tag:'Ingen udstyr'}
+ p5:{n:'Uden vægte – 20 minutter',d:'3 min. opvarmning, 16 min. med op til tre runder kun med kroppen og 1 min. rolig gang. Eget forslag, ikke fra kilderne.',tag:'Ingen udstyr'},
+ p6:{n:'Kort – 10 minutter',d:'2 min. opvarmning, 7 min. med op til to runder med kettlebell og 1 min. rolig gang. Til dage med lidt tid. Eget forslag, ikke fra kilderne.'},
+ p7:{n:'Udstrækning – 5 minutter',d:'Fem rolige stræk, tidsstyret. Stræk til let spænding, aldrig til smerte, og uden at fjedre. Eget forslag, ikke fra kilderne.'},
+ p8:{n:'Mit program',d:'Sæt dit eget program sammen af øvelserne fra biblioteket. Du styrer selv tempoet og trykker videre efter hver øvelse.'}
 };
 const EX={
  march:{n:'Gang på stedet',tips:['Stå rank, og løft knæene roligt.','Lad armene svinge naturligt med.','Hold et tempo, hvor du kan tale imens.']},
@@ -186,6 +199,11 @@ const EX={
  dbcurl:{n:'Bicep curl med håndvægte',tips:['Stå rank med en håndvægt i hver hånd og håndfladerne fremad.','Albuerne bliver ved siden af kroppen.','Sænk langsomt, og undgå at svinge med overkroppen.']},
  lunge:{n:'Baglæns udfald',tips:['Tag et langt skridt bagud, og sænk det bageste knæ mod gulvet.','Hold overkroppen oprejst og det forreste knæ over foden.','Pres fra gennem den forreste hæl. Støt dig til en stol, hvis balancen driller.']},
  bridge:{n:'Hoftebro',tips:['Lig på ryggen med bøjede knæ og fødderne i hoftebredde.','Pres hælene i gulvet, og løft hoften, til krop og lår er på linje.','Spænd ballerne i toppen, og sænk roligt.']},
+ fold:{n:'Foroverbøjning',st:1,tips:['Stå med let bøjede knæ, og lad overkroppen hænge tungt ned.','Slap af i nakke og arme.','Rul roligt op igen, når tiden er gået.']},
+ quadst:{n:'Lårstræk stående',st:1,tips:['Støt dig til en væg eller stol.','Tag fat om anklen, og før hælen mod ballen.','Hold knæene samlet, og skub hoften let frem.']},
+ hipst:{n:'Hoftebøjerstræk',st:1,tips:['Sæt det bageste knæ i gulvet, gerne på et blødt underlag.','Skub hoften roligt frem, og hold overkroppen oprejst.','Du skal mærke stræk foran på hoften, ikke i lænden.']},
+ chestst:{n:'Bryststræk',st:1,tips:['Fold hænderne bag ryggen.','Træk skuldrene tilbage og ned, og løft hænderne lidt væk fra kroppen.','Hold brystet åbent, og træk vejret roligt.']},
+ childp:{n:'Barnets stilling',st:1,tips:['Sæt dig på hælene, og fold overkroppen frem over lårene.','Ræk armene frem langs gulvet, og lad panden hvile.','Træk vejret dybt ned i ryggen.']},
  plank:{n:'Planke på underarme',tips:['Albuerne under skuldrene, kroppen i en lige linje.','Spænd mave og baller, så hoften hverken hænger eller stikker op.','Træk vejret roligt. Sæt knæene i gulvet, hvis lænden svajer.']},
  row2:{n:'Foroverbøjet tohåndsroning',adv:1,tips:['Bøj i hoften med lang ryg, og hold positionen.','Træk kettlebellen mod maven med albuerne tæt på kroppen.','Sænk kontrolleret uden at runde ryggen.']},
  clean:{n:'Clean',adv:1,tips:['Hold kettlebellen tæt på kroppen hele vejen op.','Kraften kommer fra hoften, ikke fra et armtræk.','Tag blødt imod med albuen ind til kroppen.']},
@@ -196,8 +214,11 @@ const EX={
  halo:{n:'Halo',adv:1,tips:['Hold kettlebellen med begge hænder foran brystet.','Før den roligt rundt om hovedet, tæt på nakken.','Spænd mave og baller, så kun armene bevæger sig. Skift retning hver gang.']},
  pushFloor:{n:'Push-up på gulvet',adv:1,tips:['Hænderne under skuldrene, kroppen i en lige linje.','Sænk brystet mod gulvet med albuerne skråt bagud.','Kan du ikke holde linjen, så brug bordpladen i stedet.']}
 };
-const SHORT={p1:'Kettlebell · rolig start',p2:'Kettlebell · 5 runder i eget tempo',p3:'Kettlebell · 30 sek. arbejde, 30 sek. pause',p4:'Håndvægte · op til 3 runder',p5:'Kun kroppen · op til 3 runder'},ui={};
-const PICON={p1:'deadlift',p2:'swing',p3:'goblet',p4:'press',p5:'lunge'};
+const SHORT={p1:'Kettlebell · rolig start',p2:'Kettlebell · 5 runder i eget tempo',p3:'Kettlebell · 30 sek. arbejde, 30 sek. pause',p4:'Håndvægte · op til 3 runder',p5:'Kun kroppen · op til 3 runder',p6:'Kettlebell · op til 2 runder',p7:'Fem rolige stræk',p8:'Dine egne øvelser og runder'},ui={};
+const PICON={p1:'deadlift',p2:'swing',p3:'goblet',p4:'press',p5:'lunge',p6:'row',p7:'fold',p8:'dbcurl'};
+['row','suitcase','lunge','quadst','hipst'].forEach(k=>EX[k].sided=1);
+const DBW=['2 kg','3 kg','4 kg','5 kg','6 kg','7 kg','8 kg','10 kg','12 kg','15 kg'],CW=['Kropsvægt','Uden vægt','2 kg','3 kg','4 kg','5 kg','6 kg','7 kg','8 kg','10 kg','12 kg','14 kg','15 kg'];
+const pname=(pid,cfg)=>pid==='p8'?((cfg&&cfg.name)||'Mit program'):P[pid].n;
 const P2EX=[['rows','Rows',5],['cleans','Cleans',5],['swings','Swings',5],['goblet','Goblet Squats',5],['curls','Bicep Curls',5],['triceps','Tricep Extensions',5],['pullovers','Pullovers',5],['halos','Alternating Halos',10],['pushups','Push-ups',10]];
 const O=['orig','Som i videoteksten'],SK=['skip','Spring over'],DL=['deadlift','Erstat med dødløft'];
 const P2ALT={rows:[O,SK],cleans:[O,DL,SK],swings:[O,DL,SK],goblet:[O,['squat','Squat uden vægt'],SK],curls:[O,SK],triceps:[O,SK],pullovers:[O,SK],halos:[O,SK],
@@ -205,10 +226,11 @@ const P2ALT={rows:[O,SK],cleans:[O,DL,SK],swings:[O,DL,SK],goblet:[O,['squat','S
 const WOPT=['Uden vægt','Lettere vægt','10 kg','14 kg'];
 function defaults(){const ex={};P2EX.forEach(e=>ex[e[0]]={w:e[0]==='pushups'?'Kropsvægt':'10 kg',alt:'orig'});
  return {sound:true,speak:true,rem:{on:false,days:[1,3,5],time:'17:00'},pid:'p1',p1:{dl:'10 kg',gs:'10 kg',pu:'pushCounter',rest:90},
-  p2:{rest:150,warm:false,cool:false,rowVar:'',rowCount:'',cleanVar:'',cleanCount:'',ex},p3:{dl:'10 kg',gs:'10 kg'},p4:{w:'5 kg',rest:90},p5:{pu:'pushCounter',rest:60}}}
+  p2:{rest:150,warm:false,cool:false,rowVar:'',rowCount:'',cleanVar:'',cleanCount:'',ex},p3:{dl:'10 kg',gs:'10 kg'},p4:{w:'5 kg',rest:90},p5:{pu:'pushCounter',rest:60},p6:{dl:'10 kg',gs:'10 kg',pu:'pushCounter'},p7:{},goal:3,sug:{},
+  p8:{name:'Mit program',rounds:3,rest:60,warm:true,cool:true,items:[{ex:'squat',mode:'reps',n:10,w:'Kropsvægt'},{ex:'pushCounter',mode:'reps',n:8,w:'Kropsvægt'}]}}}
 
 /* HOSTED = installérbar web-app på egen adresse (bygget med build.ps1); ellers Claude-siden */
-const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2008';
+const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2026';
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 /* ---------- lagring ---------- */
 const LS='kb-traening-v1';
@@ -264,6 +286,21 @@ function build(pid,c){const s=[];
     R('bridge','10 gentagelser',X({w:'Kropsvægt'})),Z('Gør klar',5,X({prep:1})),W('plank',20,X({w:'Kropsvægt'})));
    if(r<3)s.push(Z('Rundepause',c.rest,o));}
   s.push(Z('Rolig restitution',0,Object.assign({fill:1,note:'Gå roligt rundt, og få pulsen ned'},m,{rounds:0})),W('walk',60,{phase:'Afslutning'}));}
+ if(pid==='p6'){const o0={phase:'Opvarmning'};s.push(W('march',60,o0),W('hinge',60,Object.assign({name:'Hoftebøjninger uden vægt'},o0)));const m={phase:'Hovedtræning',block:1,rounds:2};
+  for(let r=1;r<=2;r++){const o=Object.assign({round:r},m),X=x=>Object.assign(x,o);
+   s.push(R('deadlift','8 gentagelser',X({w:c.dl})),c.gs==='Uden vægt'?R('squat','5 gentagelser',X({w:'Uden vægt'})):R('goblet','5 gentagelser',X({w:'10 kg'})),
+    R('row','5 gentagelser',X({w:'10 kg',side:'højre arm',pair:'row'+r})),R('row','5 gentagelser',X({w:'10 kg',side:'venstre arm',pair:'row'+r})),R(c.pu,'5–10 gentagelser',X({w:'Kropsvægt'})));
+   if(r<2)s.push(Z('Rundepause',60,o));}
+  s.push(Z('Rolig restitution',0,Object.assign({fill:1,note:'Gå roligt rundt, og få pulsen ned'},m,{rounds:0})),W('walk',60,{phase:'Afslutning'}));}
+ if(pid==='p7'){const o={phase:'Udstrækning',w:'Kropsvægt'},G=n=>Z(n,5,{phase:'Udstrækning',prep:1}),B=(ex,d,side,pair)=>W(ex,d,Object.assign({side,pair},o));
+  s.push(W('walk',25,{phase:'Udstrækning'}),G('Gør klar'),B('fold',45),G('Gør klar'),B('quadst',30,'højre ben','q'),G('Skift side'),B('quadst',30,'venstre ben','q'),
+   G('Gør klar'),B('hipst',30,'højre ben bagud','h'),G('Skift side'),B('hipst',30,'venstre ben bagud','h'),G('Gør klar'),B('chestst',30),G('Gør klar'),B('childp',45));}
+ if(pid==='p8'){if(c.warm)s.push(...warm3());const m={phase:'Mit program',rounds:c.rounds};
+  for(let r=1;r<=c.rounds;r++){const o=Object.assign({round:r},m);
+   c.items.forEach((it,i)=>{if(!EX[it.ex])return;(EX[it.ex].sided?['højre side','venstre side']:[undefined]).forEach((side,k)=>{const x=Object.assign({w:it.w,side,pair:side?'c'+r+'_'+i:undefined},o);
+    if(it.mode==='time')s.push(Z(k?'Skift side':'Gør klar',5,Object.assign({prep:1},o)),W(it.ex,it.n,x));else s.push(R(it.ex,it.n+' gentagelser',x))})});
+   if(r<c.rounds)s.push(Z('Rundepause',c.rest,o));}
+  if(c.cool)s.push(W('walk',60,{phase:'Afslutning'}));}
  if(pid==='p3'){s.push(...warm3());const m={phase:'Hovedtræning',rounds:4};
   for(let r=1;r<=4;r++){const o=Object.assign({round:r},m);
    [W('deadlift',30,Object.assign({w:c.dl},o)),c.gs==='Uden vægt'?W('squat',30,Object.assign({w:'Uden vægt'},o)):W('goblet',30,Object.assign({w:'10 kg'},o)),
@@ -295,7 +332,7 @@ function p2Missing(c){const m=[];
 let S=null,view='home',tickT=0,wake=null,actx=null,armed={};
 const cur=()=>S.steps[S.i];
 function openProgram(){const pid=DB.settings.pid,c=JSON.parse(JSON.stringify(DB.settings[pid]));
- S={pid,cfg:c,budget:pid==='p1'?900000:960000,steps:build(pid,c),i:0,status:'ready',total:0,blockEl:0,timeUp:false,finished:false,rpe:null,notes:''};view='workout';render()}
+ S={pid,cfg:c,budget:({p1:900000,p6:420000})[pid]||960000,free:pid==='p2'||pid==='p8',steps:build(pid,c),i:0,status:'ready',total:0,blockEl:0,timeUp:false,finished:false,rpe:null,notes:''};view='workout';render()}
 function audio(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}}
 function beep(f,d,v){if(!DB.settings.sound||!actx)return;try{const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;o.frequency.value=f;o.connect(g);g.connect(actx.destination);
  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v||.35,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d+.05)}catch(e){}}
@@ -363,7 +400,7 @@ function summarize(){const rounds=S.steps.reduce((m,s)=>Math.max(m,s.rounds||0),
   if(s.done==='skipped')sk.set(n,(sk.get(n)||0)+1)});
  return{rounds,rd,weights:[...wm].map(([n,w])=>({n,w:[...w].join(' / ')})),skipped:[...sk].map(([n,c])=>n+(c>1?' ×'+c:'')),dur:Math.round(S.total/1000)}}
 function saveSession(status){const z=summarize(),ta=document.getElementById('notes');
- const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),pid:S.pid,program:P[S.pid].n,status,
+ const rec={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:new Date().toISOString(),pid:S.pid,program:pname(S.pid,S.cfg),status,
   durSec:z.dur,roundsDone:z.rd,roundsPlanned:z.rounds,weights:z.weights,skipped:z.skipped,timeUp:S.timeUp,rpe:S.rpe,feel:S.feel||null,notes:ta?ta.value.trim().slice(0,2000):''};
  if(S.pid==='p2'){const c=S.cfg,v={en:'enarms',to:'tohånds'},t={side:'5 pr. side',total:'5 i alt'};
   rec.custom='Rows: '+(c.ex.rows.alt==='orig'?v[c.rowVar]+(c.rowVar==='en'?', '+t[c.rowCount]:''):'ændret')+' · Cleans: '+(c.ex.cleans.alt==='orig'?v[c.cleanVar]+(c.cleanVar==='en'?', '+t[c.cleanCount]:''):'ændret')+' · Pause '+c.rest+' s'}
@@ -443,6 +480,11 @@ const AN={
  lunge:{d:1.4,base:{foot:[112,150],ua:0,fa:10},fr:[{t2:0,s2:0},{t:75,s:0,t2:-10,s2:-80}]},
  bridge:{d:1.4,base:{ua:90,fa:90},fr:[{hip:[120,141],to:-90,t:135,s:15},{hip:[118,118],to:-117.6,t:98,s:2}]},
  plank:{d:1.8,base:{foot:[30,149],ua:0,fa:90},fr:[{t:-76,s:-76,to:76},{t:-75,s:-75,to:75}]},
+ fold:{d:2.4,fr:[{t:8,s:0,to:118},{t:8,s:0,to:126}]},
+ quadst:{d:2.4,fr:[{t2:-12,s2:-160,ua:-18,fa:-22},{t2:-14,s2:-166,ua:-19,fa:-23}]},
+ hipst:{d:2.6,base:{foot:[112,150],ua:0,fa:10},fr:[{t:85,s:0,t2:-10,s2:-85},{t:88,s:6,t2:-16,s2:-86,to:-4}]},
+ chestst:{d:2.4,fr:[{ua:-35,fa:-40},{to:-3,ua:-48,fa:-52}]},
+ childp:{d:2.6,base:{hip:[84,124],t:55,s:-90,ua:95,fa:95},fr:[{to:103},{to:107}]},
  rest:{d:2.2,fr:[{ua:2,fa:6},{to:-1.5,ua:5,fa:12}]},
  halo:{d:.9,fr:[{hand:[108,16],kb:[0,0]},{hand:[92,3],kb:[0,0]},{hand:[74,20],kb:[0,0]},{hand:[90,6],kb:[0,0]}]}
 };
@@ -492,6 +534,30 @@ function twoTap(key,btn,label,fn){if(armed[key]&&Date.now()-armed[key]<4000){arm
 function stepName(st){return st.name||EX[st.ex].n}
 function stepLine(st){return [stepName(st),st.w,st.type==='reps'?st.reps:(st.dur?st.dur+' sek.':''),st.side].filter(Boolean).join(' · ')}
 
+/* ---------- ugemål, graf, "sidst" og forslag ---------- */
+function isoWeek(t){const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()+3-((d.getDay()+6)%7));const w1=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-w1)/864e5-3+((w1.getDay()+6)%7))/7)}
+function weekStart(t){const x=new Date(t);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()}
+function prevWeek(t){const x=new Date(t);x.setDate(x.getDate()-7);return x.getTime()}
+function weekStats(){const m=new Map();DB.sessions.forEach(s=>{const k=weekStart(new Date(s.date)),o=m.get(k)||{n:0,min:0};o.n++;o.min+=Math.round((s.durSec||0)/60);m.set(k,o)});
+ const goal=DB.settings.goal||3,now=weekStart(Date.now()),cur=m.get(now)||{n:0,min:0};let streak=cur.n>=goal?1:0,w=prevWeek(now);while((m.get(w)||{n:0}).n>=goal){streak++;w=prevWeek(w)}
+ return{m,goal,now,cur,streak}}
+function weekLine(){const z=weekStats();let d='';for(let i=0;i<z.goal;i++)d+=`<i class="dot${i<z.cur.n?' on':''}"></i>`;
+ return `<div class="week"><span>Denne uge <b>${z.cur.n} af ${z.goal}</b></span><span aria-hidden="true">${d}</span>${z.streak?`<span>${z.streak} ${z.streak===1?'uge':'uger'} i træk</span>`:''}</div>`}
+function chartHtml(){const z=weekStats(),Wk=[];let w=z.now;for(let i=0;i<8;i++){Wk.unshift(w);w=prevWeek(w)}
+ const mx=Math.max(z.goal,1,...Wk.map(k=>(z.m.get(k)||{n:0}).n)),gy=100-z.goal/mx*80,feel={};
+ DB.sessions.filter(s=>new Date(s.date).getTime()>=Wk[0]).forEach(s=>{if(s.feel)feel[s.feel]=(feel[s.feel]||0)+1});
+ return `<div class="panel"><h3>De seneste 8 uger</h3><svg class="chart" viewBox="0 0 320 124" role="img" aria-label="Træninger pr. uge de seneste 8 uger"><line class="goal" x1="0" x2="320" y1="${gy}" y2="${gy}"/>
+ ${Wk.map((k,i)=>{const o=z.m.get(k)||{n:0},x=8+i*39,h=o.n/mx*80;return `<rect class="bar${k===z.now?' cur':''}" x="${x}" y="${100-Math.max(h,2)}" width="28" height="${Math.max(h,2)}" rx="3"/>${o.n?`<text class="ct" x="${x+14}" y="${95-h}">${o.n}</text>`:''}<text x="${x+14}" y="117">${isoWeek(k)}</text>`}).join('')}</svg>
+ <p class="hint">Træninger pr. uge, med ugenummer nederst. Den stiplede linje er dit mål på ${z.goal}. Denne uge: ${z.cur.n} træninger og ${z.cur.min} minutter.${Object.keys(feel).length?' Vurderinger i perioden: '+['For let','Passende','For hårdt'].filter(f=>feel[f]).map(f=>f.toLowerCase()+' '+feel[f]).join(', ')+'.':''}</p></div>`}
+function lastFor(st){if(!st||st.type==='rest'||!EX[st.ex])return'';const n=EX[st.ex].n;for(const s of DB.sessions){const w=(s.weights||[]).find(x=>x.n===n);if(w)return 'Sidst: '+w.w+(s.feel?', '+s.feel.toLowerCase():'')}return''}
+function suggestion(){const st=DB.settings,pid=st.pid,L=DB.sessions.filter(s=>s.pid===pid).slice(0,3);if(L.length<3||!L.every(s=>s.feel==='For let')||(st.sug||{})[pid]===L[0].id)return null;
+ const c=st[pid],up=(v,list)=>{const i=list.indexOf(v);return i>=0&&i<list.length-1?list[i+1]:null};let t='',apply=null;
+ if(pid==='p1'||pid==='p3'||pid==='p6'){if(c.dl==='10 kg'){t='Prøv dødløft med 14 kg.';apply=()=>{c.dl='14 kg'}}else t='Prøv et sværere program, f.eks. Håndvægte eller Enkle intervaller.'}
+ else if(pid==='p4'){const n=up(c.w,DBW);if(n){t='Gå op til '+n+' pr. hånd.';apply=()=>{c.w=n}}else t='Du er på den tungeste vægt på listen. Tilføj en runde i “Mit program”.'}
+ else if(pid==='p5'){const n=up(c.pu,['pushWall','pushCounter','pushFloor']);if(n){t='Prøv '+EX[n].n.toLowerCase()+'.';apply=()=>{c.pu=n}}else t='Prøv programmet med håndvægte.'}
+ else t='Vælg en tungere vægt eller flere runder under Indstillinger.';
+ return{id:L[0].id,t,apply}}
+
 /* ---------- visninger ---------- */
 function render(){const app=document.getElementById('app'),full=view==='workout'||view==='summary';app.className=full?'full':'';document.getElementById('tabs').hidden=full;
  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===view?'page':'false'));
@@ -507,6 +573,20 @@ function homeHtml(){const st=DB.settings,pid=st.pid;let cfg='';
   <p class="hint">Runden: goblet squat med én håndvægt, støttet enarmsroning, skulderpres, rumænsk dødløft og bicep curl – 8 gentagelser af hver. Vælg en vægt, du kan løfte 10 gange med god teknik i den sværeste øvelse. Hovedtræningen stopper efter 16 minutter.</p>`}
  if(pid==='p5'){const c=st.p5;cfg=`<div class="row">${sel('p5.pu','Armbøjninger',[['pushCounter','Mod køkkenbordplade'],['pushWall','Mod væg'],['pushFloor','På gulvet']],c.pu)}${sel('p5.rest','Pause mellem runder',[[45,'45 sek.'],[60,'60 sek.'],[90,'90 sek.']],c.rest)}</div>
   <p class="hint">Runden: squat, armbøjninger, baglæns udfald, hoftebro og 20 sekunders planke. Du skal bruge lidt gulvplads og gerne et underlag. Hovedtræningen stopper efter 16 minutter.</p>`}
+ if(pid==='p6'){const c=st.p6;cfg=`<div class="row">${sel('p6.dl','Dødløft',['10 kg','14 kg'],c.dl)}${sel('p6.gs','Goblet squat',['10 kg','Uden vægt'],c.gs)}</div>
+  <div class="row">${sel('p6.pu','Armbøjninger mod',[['pushCounter','Stabil køkkenbordplade'],['pushWall','Væg']],c.pu)}</div>
+  <p class="hint">Runden: dødløft, goblet squat, støttet enarmsroning og armbøjninger. Hovedtræningen stopper efter 7 minutter.</p>`}
+ if(pid==='p7')cfg='<p class="hint">Rolig gang, foroverbøjning, lårstræk, hoftebøjerstræk, bryststræk og barnets stilling. Du skal bruge lidt gulvplads og gerne et blødt underlag til knæet.</p>';
+ if(pid==='p8'){const c=st.p8,exo=Object.keys(EX).map(k=>[k,EX[k].n]);
+  cfg=`<label class="fld"><span>Navn</span><input type="text" id="f-p8-name" data-cfg="p8.name" value="${esc(c.name)}" maxlength="30"></label>
+  ${c.items.map((it,i)=>`<div class="exrow"><div class="row">${sel('p8.items.'+i+'.ex','Øvelse '+(i+1),exo,it.ex)}</div>
+   <div class="row">${sel('p8.items.'+i+'.mode','Type',[['reps','Gentagelser'],['time','Sekunder']],it.mode)}${sel('p8.items.'+i+'.n','Antal',it.mode==='time'?[15,20,30,45,60]:[5,6,8,10,12,15,20],it.n)}${sel('p8.items.'+i+'.w','Vægt',CW,it.w)}</div>
+   <button type="button" class="danger" data-act="cdel" data-i="${i}">Fjern øvelse ${i+1}</button></div>`).join('')}
+  <div class="exrow"><button type="button" data-act="cadd"${c.items.length>=12?' disabled':''}>Tilføj øvelse</button>
+  <div class="row">${sel('p8.rounds','Runder',[1,2,3,4,5,6],c.rounds)}${sel('p8.rest','Pause mellem runder',[[30,'30 sek.'],[60,'60 sek.'],[90,'90 sek.'],[120,'120 sek.']],c.rest)}</div>
+  <label class="chk"><input type="checkbox" id="f-p8-warm" data-cfg="p8.warm"${c.warm?' checked':''}> 3 minutters opvarmning først</label>
+  <label class="chk"><input type="checkbox" id="f-p8-cool" data-cfg="p8.cool"${c.cool?' checked':''}> 1 minuts rolig gang til sidst</label>
+  <p class="hint">Øvelser med to sider (f.eks. enarmsroning og udfald) laves automatisk på begge sider.</p></div>`}
  if(pid==='p2'){const c=st.p2,miss=p2Missing(c),vo=[['','Vælg …'],['en','Enarms'],['to','Tohånds']],co=[['','Vælg …'],['side','5 pr. side'],['total','5 i alt']];
   cfg=`<div class="note">Programmet kræver mere teknik end begynderversionen, og 10 kg kan være for tungt til nogle øvelser, f.eks. curls, tricep extensions, pullovers og halos. Vælg lettere vægt, en erstatning, eller spring over. Det er ikke præcis 20 minutter – varigheden afhænger af dit tempo.</div>
   <details><summary>Original tekst fra videoen</summary><ol class="orig"><li>5 runder med 2–3 minutters pause mellem runderne:</li>${P2EX.map(e=>`<li>${e[2]} × ${e[1]}</li>`).join('')}</ol>
@@ -523,14 +603,17 @@ function homeHtml(){const st=DB.settings,pid=st.pid;let cfg='';
   <label class="chk"><input type="checkbox" id="f-p2-cool" data-cfg="p2.cool"${c.cool?' checked':''}> Tilføj 1 minuts rolig gang til sidst</label>
   <button type="button" data-act="p2reset">Nulstil til videoteksten</button></div>
   ${miss.length?`<p class="note">Vælg først: ${miss.join(', ')}.</p>`:''}`}
- const blocked=pid==='p2'&&p2Missing(st.p2).length>0;
- return `<header><h1>MK Fitness</h1></header>
- <div class="stack">${Object.keys(P).map(k=>`<button type="button" class="prog" data-act="pick" data-id="${k}" aria-pressed="${k===pid}"><span class="ptxt"><b>${P[k].n}</b><span>${SHORT[k]}</span></span><span class="anim" data-mini="1" data-ex="${PICON[k]}"></span></button>`).join('')}</div>
- ${pending?`<div class="panel"><h3>Fortsæt afbrudt træning</h3><p>${esc(P[pending.S.pid].n)}${pending.S.finished?' – færdig, men ikke gemt':(s=>s?' – '+esc(stepName(s))+(s.round?', runde '+s.round+' af '+s.rounds:''):'')(pending.S.steps[pending.S.i])}. Afbrudt ${new Date(pending.at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}.</p>
+ const blocked=pid==='p2'&&p2Missing(st.p2).length>0||pid==='p8'&&!st.p8.items.length,sg=suggestion();
+ return `<header class="stack"><h1>MK Fitness</h1>${weekLine()}</header>
+ <div class="stack">${Object.keys(P).map(k=>`<button type="button" class="prog" data-act="pick" data-id="${k}" aria-pressed="${k===pid}"><span class="ptxt"><b>${esc(pname(k,st.p8))}</b><span>${SHORT[k]}</span></span><span class="anim" data-mini="1" data-ex="${PICON[k]}"></span></button>`).join('')}</div>
+ ${pending?`<div class="panel"><h3>Fortsæt afbrudt træning</h3><p>${esc(pname(pending.S.pid,pending.S.cfg))}${pending.S.finished?' – færdig, men ikke gemt':(s=>s?' – '+esc(stepName(s))+(s.round?', runde '+s.round+' af '+s.rounds:''):'')(pending.S.steps[pending.S.i])}. Afbrudt ${new Date(pending.at).toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'})}.</p>
   <div class="row"><button type="button" class="primary" data-act="resumeSaved">Fortsæt</button><button type="button" class="danger" data-act="dropSaved">Kassér</button></div></div>`:''}
  <button type="button" class="big primary" data-act="open"${blocked?' disabled':''}>Åbn programmet</button>
- ${blocked?'<p class="note">Videoprogrammet mangler et par valg under Indstillinger.</p>':''}
+ ${blocked?'<p class="note">Programmet mangler et par valg under Indstillinger.</p>':''}
+ ${sg?`<div class="panel"><h3>Klar til mere?</h3><p>Du har svaret “for let” tre gange i træk på ${esc(pname(pid,st.p8))}. ${sg.t}</p>
+  <div class="row">${sg.apply?'<button type="button" class="primary" data-act="sugYes">Ja, skift</button><button type="button" data-act="sugNo">Nej tak</button>':'<button type="button" data-act="sugNo">OK</button>'}</div></div>`:''}
  <details class="fold" data-ui="cfg"${blocked||ui.cfg?' open':''}><summary>Indstillinger</summary><div class="stack"><p class="hint">${P[pid].d}</p>${cfg}
+  ${sel('goal','Ugemål',[1,2,3,4,5,6,7].map(n=>[n,n+(n===1?' træning':' træninger')+' om ugen']),st.goal)}
   <label class="chk"><input type="checkbox" id="f-sound" data-cfg="sound"${st.sound?' checked':''}> Lyd ved nedtælling og skift</label>
   <label class="chk"><input type="checkbox" id="f-speak" data-cfg="speak"${st.speak?' checked':''}> Talte instruktioner</label></div></details>
  ${HOSTED?`<details class="fold" data-ui="rem"${ui.rem?' open':''}><summary>Påmindelser</summary>${remHtml()}</details>`:''}
@@ -558,7 +641,7 @@ function checkVersion(){if(!HOSTED||S)return;fetch('version.json',{cache:'no-sto
 function animBlock(ex,note,label){return AN[ex]?`${label?`<div class="cap">${label}</div>`:''}<div class="anim" data-ex="${ex}"${note?` data-note="${esc(note)}"`:''}></div><ul class="tips">${EX[ex].tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
 function renderWorkout(){const app=document.getElementById('app'),st=cur();if(!st)return;const rest=st.type==='rest',nx=S.steps[S.i+1];
  let nw=S.i+1;while(S.steps[nw]&&S.steps[nw].type==='rest')nw++;const nwx=S.steps[nw];
- const rd=st.round?`Runde ${st.round} af ${st.rounds}${S.pid==='p2'?` · ${st.rounds-st.round} tilbage`:''}`:(st.phase||'');
+ const rd=st.round?`Runde ${st.round} af ${st.rounds}${(S.free||S.pid==='p2')?` · ${st.rounds-st.round} tilbage`:''}`:(st.phase||'');
  const chips=[st.w,st.type==='reps'?st.reps:null,st.side].filter(Boolean).map(c=>`<span class="chip">${esc(c)}</span>`).join('');
  const big=S.status==='ready'?'<button type="button" class="big primary" data-act="start">Start</button>'
   :S.status==='paused'?'<button type="button" class="big primary" data-act="resume">Fortsæt</button>'
@@ -572,7 +655,7 @@ function renderWorkout(){const app=document.getElementById('app'),st=cur();if(!s
  app.innerHTML=`<div class="stack ${rest?'rest':'work'}">
  <div class="wtop"><button type="button" class="lnk" data-act="end">‹ Afslut</button><div class="tot" id="tot"></div></div>
  <div class="stepcard"><div class="eyebrow">${rd}${st.orig?` · video: ${st.orig}`:''}</div><h2>${esc(stepName(st))}</h2><div class="meta">${chips}</div>
-  <div class="tv">${AN[aex]?`<div class="anim" data-mini="1" data-ex="${aex}" data-cap="${rest?(nwx?'Næste: '+esc(stepName(nwx)):'Hvil'):'Forenklet guide'}"></div>`:''}<div class="tcol"><div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div></div></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}</div>
+  <div class="tv">${AN[aex]?`<div class="anim" data-mini="1" data-ex="${aex}" data-cap="${rest?(nwx?'Næste: '+esc(stepName(nwx)):'Hvil'):'Forenklet guide'}"></div>`:''}<div class="tcol"><div class="timer" id="timer">00:00</div><div class="tlabel" id="tlabel"></div></div></div>${st.note?`<div class="tlabel">${esc(st.note)}</div>`:''}${(l=>l?`<div class="tlabel">${esc(l)}</div>`:'')(lastFor(st))}</div>
  ${big}
  <div class="ctl"><button type="button" data-act="pause"${S.status==='running'?'':' disabled'}>Pause</button><button type="button" data-act="skip"${run?'':' disabled'}>Spring over</button>${partner()?'<button type="button" data-act="swap">Byt side</button>':''}</div>
  <p class="nextl">Næste: ${nx?esc(stepLine(nx)):'træningen er slut'}</p>
@@ -591,9 +674,9 @@ function tickUI(){if(!S||view!=='workout')return;const st=cur(),T=document.getEl
  const cd=timed&&rem<=3&&S.status==='running';T.classList.toggle('cd',cd);
  if(cd&&rem>=1&&rem!==S.lastCd){S.lastCd=rem;beep(660,.12)}
  document.getElementById('tlabel').textContent=S.status==='ready'?'Klar, når du er':S.status==='paused'?'På pause':timed?(rem<=3?'Skifter om lidt':'tilbage'):'tid på øvelsen';
- document.getElementById('tot').innerHTML=S.pid==='p2'?`Forløbet<b> ${mmss(Math.floor(S.total/1000))}</b>`:`Tid tilbage<b> ${mmss(Math.ceil(remaining()/1000))}</b>`}
+ document.getElementById('tot').innerHTML=(S.free||S.pid==='p2')?`Forløbet<b> ${mmss(Math.floor(S.total/1000))}</b>`:`Tid tilbage<b> ${mmss(Math.ceil(remaining()/1000))}</b>`}
 function summaryHtml(){const z=summarize(),fin=S.finished;
- return `<header class="stack"><h1>${fin?'Træningen er slut':'Afslut træningen?'}</h1><p class="sub">${P[S.pid].n}. Intet er gemt endnu – du bestemmer selv, hvordan træningen registreres.</p></header>
+ return `<header class="stack"><h1>${fin?'Træningen er slut':'Afslut træningen?'}</h1><p class="sub">${esc(pname(S.pid,S.cfg))}. Intet er gemt endnu – du bestemmer selv, hvordan træningen registreres.</p></header>
  <div class="panel"><div class="stat"><div><b>${mmss(z.dur)}</b><span>aktiv tid</span></div><div><b>${z.rounds?z.rd+' af '+z.rounds:'–'}</b><span>runder gennemført</span></div></div>
   ${S.timeUp?'<p class="hint">Hovedtræningen stoppede, da tiden var gået, før alle runder var nået. Det er helt efter planen.</p>':''}
   ${z.weights.length?`<p><b>Vægte:</b> ${z.weights.map(w=>esc(w.n+' '+w.w)).join(', ')}</p>`:''}
@@ -609,7 +692,7 @@ function storeNote(){if(!localOk&&remoteState!=='konto')return 'Browseren tillad
  if(remoteState==='venter')return 'Tjekker, hvor historikken kan gemmes …';
  return 'Historikken gemmes kun i denne browser på denne enhed. Den følger ikke med til andre enheder og forsvinder, hvis browserdata slettes. Brug eksport som sikkerhedskopi.'}
 function historyHtml(){const L=DB.sessions;
- return `<header class="stack"><h1>Historik</h1><p class="sub">${storeNote()}</p></header>
+ return `<header class="stack"><h1>Historik</h1>${weekLine()}</header>${chartHtml()}<p class="hint">${storeNote()}</p>
  ${L.length?L.map(s=>`<div class="panel hist"><div class="hh"><h3>${esc(s.program)}</h3><span class="pill ${s.status==='gennemført'?'ok':'part'}">${s.status==='gennemført'?'Gennemført':'Delvist'}</span></div>
   <p class="hint">${new Date(s.date).toLocaleString('da-DK',{dateStyle:'medium',timeStyle:'short'})} · ${mmss(s.durSec||0)}${s.roundsPlanned?` · ${s.roundsDone} af ${s.roundsPlanned} runder`:''}${s.feel?` · ${esc(s.feel.toLowerCase())}`:''}${s.rpe?` · sværhedsgrad ${s.rpe}/10`:''}</p>
   ${(s.weights||[]).length?`<p>${s.weights.map(w=>esc(w.n+' '+w.w)).join(', ')}</p>`:''}${(s.skipped||[]).length?`<p class="hint">Sprunget over: ${s.skipped.map(esc).join(', ')}</p>`:''}
@@ -621,7 +704,7 @@ function historyHtml(){const L=DB.sessions;
   <div class="row"><button type="button" data-act="import">Importér fra feltet</button><label class="fld"><span>… eller vælg en eksportfil</span><input type="file" id="impfile" accept=".json,application/json"></label></div>
   <p class="hint">Import lægger træninger til og overskriver ikke dem, du har i forvejen.</p></div>`}
 function libraryHtml(){const card=k=>`<div class="panel"><h3>${EX[k].n}</h3>${animBlock(k)}${EX[k].src==='ACE'?`<p class="hint">Teknikpunkterne følger <a href="${ACE}" target="_blank" rel="noopener">ACE's begynderguide</a>.</p>`:''}</div>`;
- const basic=Object.keys(EX).filter(k=>!EX[k].adv),adv=Object.keys(EX).filter(k=>EX[k].adv);
+ const basic=Object.keys(EX).filter(k=>!EX[k].adv&&!EX[k].st),adv=Object.keys(EX).filter(k=>EX[k].adv),stretch=Object.keys(EX).filter(k=>EX[k].st);
  return `<header class="stack"><h1>Øvelser</h1><p class="sub">Et lille bibliotek til de tre programmer. Animationerne er forenklede bevægelsesguides set fra siden.</p></header>
  <div class="panel"><h3>Sådan er træningen bygget op</h3>
   <details><summary>Gentagelsesbaseret træning</summary><p>Du laver et fast antal gentagelser i dit eget tempo og trykker “Færdig – næste”, når de er lavet. Tiden må gerne variere; det er kvaliteten af hver gentagelse, der tæller.</p></details>
@@ -629,6 +712,7 @@ function libraryHtml(){const card=k=>`<div class="panel"><h3>${EX[k].n}</h3>${an
   <details><summary>Kettlebell-komplekser</summary><p>Flere øvelser laves i træk med samme kettlebell og først pause efter hele rækken. Det er effektivt, men kræver, at du kan hver øvelse for sig, og den sværeste øvelse bestemmer vægten.</p></details>
   <details><summary>Fra dødløft til swings</summary><p>Lær grundbevægelserne, før du lægger tempo og vægt på. ACE anbefaler at mestre det grundlæggende først og bruger dødløftet som indgang til swinget. StrongFirst rangerer øvelserne fra kettlebell-dødløft over swings fra stilstand til tohånds- og senere enhåndssving. Derfor er swings og cleans ikke med i begynderprogrammerne, og appen øger ikke vægten automatisk.</p></details></div>
  <h2>Grundøvelser</h2><p class="hint">Bruges i begynder-, interval-, håndvægt- og kropsvægtprogrammerne. Håndvægte er tegnet som en kugle.</p>${basic.map(card).join('')}
+ <h2>Udstrækning</h2><p class="hint">Stræk til let spænding, aldrig til smerte, og uden at fjedre.</p>${stretch.map(card).join('')}
  <h2>Kun i videoprogrammet</h2><p class="hint">Kræver mere teknik. Videoen har ikke kunnet kontrolleres, så animationerne viser almindelige udførelser, ikke nødvendigvis videoens.</p>${adv.map(card).join('')}
  <div class="panel"><h3>Faglige referencer</h3><p><a href="${ACE}" target="_blank" rel="noopener">ACE: How to Get Started With Kettlebells</a></p><p><a href="${SF}" target="_blank" rel="noopener">StrongFirst: Program Minimum [Squared]</a></p>
   <p class="hint">Dødløft, goblet squat og swing er kontrolleret mod ACE-artiklen. De øvrige øvelser er ikke beskrevet i de to kilder og vises som almindelig, forenklet udførelse. “Enkle intervaller”, “Håndvægte” og “Uden vægte” er selvstændige forslag, ikke officielle programmer fra kilderne.</p></div>`}
@@ -658,6 +742,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='remday'){const r=DB.settings.rem,d=+b.dataset.d;r.days=r.days.includes(d)?r.days.filter(x=>x!==d):[...r.days,d];persist();const y=window.scrollY;render();window.scrollTo(0,y)}
  else if(a==='remperm'){try{await Notification.requestPermission()}catch(er){}const y=window.scrollY;render();window.scrollTo(0,y);checkRem()}
  else if(a==='remics'){dl('kettlebell-paamindelse.ics',remIcs(),'text/calendar');toast('Åbn filen for at lægge alarmen i kalenderen')}
+ else if(a==='cadd'||a==='cdel'){const c=DB.settings.p8;if(a==='cadd')c.items.push({ex:'squat',mode:'reps',n:10,w:'Kropsvægt'});else c.items.splice(+b.dataset.i,1);ui.cfg=true;persist();const y=window.scrollY;render();window.scrollTo(0,y)}
+ else if(a==='sugYes'||a==='sugNo'){const sg=suggestion();if(sg){if(a==='sugYes'&&sg.apply){sg.apply();toast('Ændret. Du kan altid skifte tilbage under Indstillinger.')}DB.settings.sug=Object.assign({},DB.settings.sug,{[DB.settings.pid]:sg.id});persist();render()}}
  else if(a==='easier'){makeEasier()}
  else if(a==='repeat'){audio();say(instruction(true))}
  else if(a==='resumeSaved'){S=pending.S;pending=null;S.status=S.finished?'done':'paused';view=S.finished?'summary':'workout';render()}
@@ -674,7 +760,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
 });
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.ui;if(k)ui[k]=e.target.open},true);
 document.addEventListener('change',e=>{const t=e.target;if(t.id==='impfile'&&t.files[0]){const r=new FileReader();r.onload=()=>importText(String(r.result));r.readAsText(t.files[0]);return}
- const p=t.dataset&&t.dataset.cfg;if(!p)return;let v=t.type==='checkbox'?t.checked:t.value;if(/rest$/.test(p))v=+v;setPath(DB.settings,p,v);
+ const p=t.dataset&&t.dataset.cfg;if(!p)return;let v=t.type==='checkbox'?t.checked:t.value;if(/(rest|rounds|goal|\.n)$/.test(p))v=+v;if(t.type==='text')v=String(v).trim().slice(0,30)||'Mit program';setPath(DB.settings,p,v);
+ const mm=/^p8\.items\.(\d+)\.mode$/.exec(p);if(mm)DB.settings.p8.items[+mm[1]].n=v==='time'?30:10;
  if(p==='p2.rowVar'&&v!=='en')DB.settings.p2.rowCount='';if(p==='p2.cleanVar'&&v!=='en')DB.settings.p2.cleanCount='';
  persist();if(p==='sound'){if(v){audio();beep(880,.15)}return}if(p==='speak'){if(v)say('Tale er slået til.');else try{speechSynthesis.cancel()}catch(er){}return}if(view==='home'){const y=window.scrollY;render();window.scrollTo(0,y)}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(S&&S.status==='running'){tick();wakeOn()}checkRem();checkVersion()});
