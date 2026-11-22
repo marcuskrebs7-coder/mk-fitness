@@ -261,12 +261,15 @@ function wakeOff(){try{if(wake)wake.release()}catch(e){}wake=null;if(wakeState==
 /* tale */
 let tts=null,muteUntil=0;
 function bsay(text,done){try{const ss=window.speechSynthesis;if(!ss){done();return}ss.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='da-DK';u.onend=u.onerror=done;ss.speak(u)}catch(e){done()}}
-function say(text){if(!DB.settings.speak||!text)return;muteUntil=Date.now()+text.length*95+2000;const done=()=>{muteUntil=Date.now()+900};
- if(tts&&micState==='idle'){try{tts.speak(text,{language:'da'}).then(done).catch(()=>bsay(text,done))}catch(e){bsay(text,done)}}else bsay(text,done)}
+let saidAt=0,ttsBusy=false;
+function say(text){if(!DB.settings.speak||!text)return;saidAt=Date.now();muteUntil=saidAt+text.length*95+2000;const done=()=>{ttsBusy=false;muteUntil=Date.now()+400};
+ if(tts&&micState==='idle'){ttsBusy=true;try{tts.speak(text,{language:'da'}).then(done).catch(()=>{ttsBusy=false;bsay(text,done)})}catch(e){ttsBusy=false;bsay(text,done)}}else bsay(text,done)}
+/* Kommandoer spærres ikke, mens appen taler: de talte tekster indeholder ingen kommandoord ("Hvil", "Derefter"), så appen kan ikke udløse sig selv. */
+function mutedNow(){return false}
 function spoken(st){if(!st)return'';const w=st.w==='Uden vægt'?' uden vægt':st.w==='Lettere vægt'?' med lettere vægt':/kg$/.test(st.w||'')?' med '+st.w.replace('kg','kilo'):'';
  const n=st.type==='reps'?st.reps.replace('–',' til '):st.dur+' sekunder';return stepName(st)+'. '+n+w+(st.side?', '+st.side:'')+'.'}
 function instruction(tips){const st=cur();if(!st)return'';let k=S.i+1;while(S.steps[k]&&S.steps[k].type==='rest')k++;const nx=S.steps[k];
- if(st.type==='rest')return(st.prep?st.name+'. ':st.name+', '+st.dur+' sekunder. ')+(nx?'Næste er '+spoken(nx):'');
+ if(st.type==='rest')return(st.prep?st.name+'. ':'Hvil '+st.dur+' sekunder. ')+(nx?'Derefter '+spoken(nx):'');
  return spoken(st)+(tips?' '+EX[st.ex].tips.join(' '):'')}
 function easier(st){if(!st||st.type==='rest')return null;const e=st.ex,w=st.w;
  if(w==='14 kg')return{ex:e,w:'10 kg'};if(e==='goblet')return{ex:'squat',w:'Uden vægt'};if(e==='deadlift')return{ex:'hinge',w:'Uden vægt'};
@@ -322,7 +325,8 @@ function saveSession(status){const z=summarize(),ta=document.getElementById('not
 
 /* ---------- stemmestyring ---------- */
 let dict=null,dictKnown=false,micState='idle',micMsg='',fired={},lastFire=0,noLang=false;
-const CMD={next:/(^|[^a-zæøå])n(æ|ae|e)ste(?![a-zæøå])/g,extra:/ekstra\s+pause/g,pause:/(^|[^a-zæøå])pause/g,resume:/for?ts(æ|ae|e)t/g,repeat:/gentag/g};
+let heard='';
+const CMD={next:/(^|[^a-zæøå])(n(æ|ae|e|a|ä)st(e|a|en)?|next|videre|f(æ|ae)rdig)(?![a-zæøå])/g,extra:/ekstra\s+pause/g,pause:/(^|[^a-zæøå])pause/g,resume:/for?ts(æ|ae|e)t/g,repeat:/gentag/g};
 const CMDN={next:'næste',extra:'ekstra pause',pause:'pause',resume:'fortsæt',repeat:'gentag vejledning'};
 function runCmd(c){if(!S||view!=='workout')return false;
  if(c==='next')return doneStep();
@@ -331,20 +335,24 @@ function runCmd(c){if(!S||view!=='workout')return false;
  if(c==='resume'){if(S.status!=='paused')return false;startRun();renderWorkout();return true}
  if(c==='repeat'){if(S.status==='ready')return false;say(instruction(true));return true}return false}
 function hear(text,final){const t=String(text||'').toLowerCase(),n={};for(const c in CMD)n[c]=(t.match(CMD[c])||[]).length;n.pause=Math.max(0,n.pause-n.extra);
- const muted=Date.now()<muteUntil;let did=false;
- for(const c in CMD){if(n[c]>(fired[c]||0)&&!muted&&!did&&Date.now()-lastFire>1500){did=true;lastFire=Date.now();
+ const muted=mutedNow();let did=false;if(t.trim()){heard=t.trim().split('|')[0].slice(-40);if(!muted)micMsg=''}
+ for(const c in CMD){if(n[c]>(fired[c]||0)&&!muted&&!did&&Date.now()-lastFire>1200){did=true;lastFire=Date.now();
    if(runCmd(c)){toast('Hørt: “'+CMDN[c]+'”');beep(1320,.12)}else{micMsg='Hørt “'+CMDN[c]+'”, men det passer ikke her';tickMic()}}
   fired[c]=n[c]}
- if(final||!t)fired={}}
-function localDict(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;let rec=null,want=false;const hs={p:[],f:[],s:[]},st=(state,reason)=>hs.s.forEach(h=>h({state,reason}));
+ if(final||!t)fired={};if(!did)tickMic()}
+/* Browserens egen talegenkendelse. Den stopper selv efter hver sætning eller stilhed, så den genstartes straks og holdes i gang. */
+function localDict(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;let rec=null,want=false,fails=0,timer=0;const hs={p:[],f:[],s:[]},st=(state,reason)=>hs.s.forEach(h=>h({state,reason}));
+ function begin(res,rej){clearTimeout(timer);try{rec=new SR();rec.lang='da-DK';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=4;
+   rec.onstart=()=>{st('listening');if(res){res();res=null}};
+   rec.onresult=e=>{fails=0;for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],a=[];for(let k=0;k<r.length;k++)a.push(r[k].transcript);(r.isFinal?hs.f:hs.p).forEach(h=>h({text:a.join(' | ')}))}};
+   rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){want=false;st('idle','not_granted');if(rej){rej({code:'not_granted'});rej=null}}};
+   rec.onend=()=>{if(!want){st('idle','stopped');return}if(document.visibilityState!=='visible')return;again()};
+   rec.start()}catch(er){again()}}
+ function again(){if(!want)return;if(++fails>40){want=false;st('idle','upstream_error');return}clearTimeout(timer);timer=setTimeout(()=>begin(),fails>3?800:150)}
+ document.addEventListener('visibilitychange',()=>{if(want&&document.visibilityState==='visible'){fails=0;again()}});
  return{onPartial:h=>hs.p.push(h),onFinal:h=>hs.f.push(h),onState:h=>hs.s.push(h),
-  start(){want=true;return new Promise((res,rej)=>{try{rec=new SR();rec.lang='da-DK';rec.continuous=true;rec.interimResults=true;
-    rec.onstart=()=>{st('listening');res()};
-    rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],t=r[0].transcript;(r.isFinal?hs.f:hs.p).forEach(h=>h({text:t}))}};
-    rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){want=false;st('idle','not_granted');rej({code:'not_granted'})}};
-    rec.onend=()=>{if(want&&document.visibilityState==='visible'){try{rec.start()}catch(er){want=false;st('idle','upstream_error')}}else{const h=want;want=false;st('idle',h?'hidden':'stopped')}};
-    st('starting');rec.start()}catch(er){want=false;st('idle','upstream_error');rej({code:'upstream_error'})}})},
-  stop(){want=false;try{if(rec)rec.stop()}catch(er){}return Promise.resolve()}}}
+  start(){want=true;fails=0;st('starting');return new Promise((res,rej)=>begin(res,rej))},
+  stop(){want=false;clearTimeout(timer);try{if(rec)rec.stop()}catch(er){}st('idle','stopped');return Promise.resolve()}}}
 function initDict(){use('dictation').then(d=>{dict=d||localDict();d=dict;dictKnown=true;if(d){try{
    d.onPartial(e=>hear(e.text,false));d.onFinal(e=>hear(e.text,true));
    d.onState(e=>{micState=e.state;if(e.state==='idle'&&e.reason){micMsg={hidden:'Stoppet, fordi siden blev skjult. Tryk for at lytte igen.',viewer_stopped:'Stoppet.',stopped:'',not_granted:'Mikrofonen er ikke tilladt for denne side.',dismissed:'',unavailable:'Stemmestyring er ikke tilgængelig her.',rate_limited:'Optaget lige nu. Prøv igen om lidt.',time_limit:'Stoppet efter 60 minutter. Tryk for at lytte igen.'}[e.reason]||'Mikrofonen fejlede. Brug knappen.'}
@@ -358,7 +366,7 @@ function toggleMic(){if(!dict){micMsg=dictKnown?'Stemmestyring virker ikke i den
   else if(c!=='stopped'&&c!=='dismissed')micMsg='Stemmestyring kunne ikke starte. Brug knappen.';tickMic()})}
 function micHtml(){const on=micState==='listening',busy=micState==='starting'||micState==='finishing';
  const t=!dictKnown?'Tjekker stemmestyring …':!dict?'Stemmestyring er ikke tilgængelig her':on?'Lytter – sig “næste”':busy?'Et øjeblik …':'Slå stemmestyring til';
- const sub=micMsg||(!dict&&dictKnown?(HOSTED?'Virker i Chrome og Edge, ikke i Firefox. Knappen virker altid.':'Virker i Chrome og Edge og i Claude-appen på computer – ikke i Safari, Firefox eller Claudes mobilapp. Knappen virker altid.'):'Kommandoer: “næste”, “pause”, “fortsæt”, “ekstra pause”, “gentag vejledning”.'+(on?' Tryk for at slå mikrofonen fra.':''));
+ const sub=micMsg||(!dict&&dictKnown?(HOSTED?'Virker i Chrome og Edge, ikke i Firefox. Knappen virker altid.':'Virker i Chrome og Edge og i Claude-appen på computer – ikke i Safari, Firefox eller Claudes mobilapp. Knappen virker altid.'):on?(heard?'Hørte: “'+heard+'”. ':'')+'Sig “næste”, “videre” eller “færdig”. Tryk for at slå fra.':'Kommandoer: “næste” (eller “videre”/“færdig”), “pause”, “fortsæt”, “ekstra pause”, “gentag vejledning”.');
  return `<i></i><span>${t}<small>${esc(sub)}</small></span>`}
 function tickMic(){const b=document.getElementById('mic');if(b){b.className='mic'+(micState==='listening'?' on':'');b.innerHTML=micHtml();b.setAttribute('aria-pressed',micState==='listening')}}
 
