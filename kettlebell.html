@@ -527,7 +527,7 @@ function stepLine(st){return [stepName(st),st.w,st.type==='reps'?st.reps:(st.dur
 function isoWeek(t){const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()+3-((d.getDay()+6)%7));const w1=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-w1)/864e5-3+((w1.getDay()+6)%7))/7)}
 function weekStart(t){const x=new Date(t);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()}
 function prevWeek(t){const x=new Date(t);x.setDate(x.getDate()-7);return x.getTime()}
-function weekStats(){const m=new Map();DB.sessions.forEach(s=>{const k=weekStart(new Date(s.date)),o=m.get(k)||{n:0,min:0};o.n++;o.min+=Math.round((s.durSec||0)/60);m.set(k,o)});
+function weekStats(){const m=new Map();DB.sessions.filter(s=>s.status==='gennemført').forEach(s=>{const k=weekStart(new Date(s.date)),o=m.get(k)||{n:0,min:0};o.n++;o.min+=Math.round((s.durSec||0)/60);m.set(k,o)});
  const goal=DB.settings.goal||3,now=weekStart(Date.now()),cur=m.get(now)||{n:0,min:0};let streak=cur.n>=goal?1:0,w=prevWeek(now);while((m.get(w)||{n:0}).n>=goal){streak++;w=prevWeek(w)}
  return{m,goal,now,cur,streak}}
 function weekLine(){const z=weekStats();let d='';for(let i=0;i<z.goal;i++)d+=`<i class="dot${i<z.cur.n?' on':''}"></i>`;
@@ -537,7 +537,7 @@ function chartHtml(){const z=weekStats(),Wk=[];let w=z.now;for(let i=0;i<8;i++){
  DB.sessions.filter(s=>new Date(s.date).getTime()>=Wk[0]).forEach(s=>{if(s.feel)feel[s.feel]=(feel[s.feel]||0)+1});
  return `<div class="panel"><h3>De seneste 8 uger</h3><svg class="chart" viewBox="0 0 320 124" role="img" aria-label="Træninger pr. uge de seneste 8 uger"><line class="goal" x1="0" x2="320" y1="${gy}" y2="${gy}"/>
  ${Wk.map((k,i)=>{const o=z.m.get(k)||{n:0},x=8+i*39,h=o.n/mx*80;return `<rect class="bar${k===z.now?' cur':''}" x="${x}" y="${100-Math.max(h,2)}" width="28" height="${Math.max(h,2)}" rx="3"/>${o.n?`<text class="ct" x="${x+14}" y="${95-h}">${o.n}</text>`:''}<text x="${x+14}" y="117">${isoWeek(k)}</text>`}).join('')}</svg>
- <p class="hint">Træninger pr. uge, med ugenummer nederst. Den stiplede linje er dit mål på ${z.goal}. Denne uge: ${z.cur.n} træninger og ${z.cur.min} minutter.${Object.keys(feel).length?' Vurderinger i perioden: '+['For let','Passende','For hårdt'].filter(f=>feel[f]).map(f=>f.toLowerCase()+' '+feel[f]).join(', ')+'.':''}</p></div>`}
+ <p class="hint">Gennemførte træninger pr. uge, med ugenummer nederst. Delvise træninger tæller ikke med. Den stiplede linje er dit mål på ${z.goal}. Denne uge: ${z.cur.n} træninger og ${z.cur.min} minutter.${Object.keys(feel).length?' Vurderinger i perioden: '+['For let','Passende','For hårdt'].filter(f=>feel[f]).map(f=>f.toLowerCase()+' '+feel[f]).join(', ')+'.':''}</p></div>`}
 function lastFor(st){if(!st||st.type==='rest'||!EX[st.ex])return'';const n=EX[st.ex].n;for(const s of DB.sessions){const w=(s.weights||[]).find(x=>x.n===n);if(w)return 'Sidst: '+w.w+(s.feel?', '+s.feel.toLowerCase():'')}return''}
 function suggestion(){const st=DB.settings,pid=st.pid,L=DB.sessions.filter(s=>s.pid===pid).slice(0,3);if(L.length<3||!L.every(s=>s.feel==='For let')||(st.sug||{})[pid]===L[0].id)return null;
  const c=st[pid],up=(v,list)=>{const i=list.indexOf(v);return i>=0&&i<list.length-1?list[i+1]:null};let t='',apply=null;
