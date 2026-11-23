@@ -69,7 +69,16 @@ button:disabled{opacity:.5;cursor:default}
 .cmp img,.thumbs img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:var(--bg);display:block}
 .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .thumbs figure{margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
-.thumbs figcaption{font-size:13px;color:var(--muted)}
+.thumbs input{width:100%;min-width:0;font-size:12px;padding:6px 4px;min-height:36px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.big-ph{width:100%;max-height:60vh;object-fit:contain;border-radius:10px;background:var(--bg);display:block}
+.phcap{text-align:center;color:var(--muted);font-size:15px}
+.row3{display:grid;grid-template-columns:52px 1fr 52px;gap:8px;align-items:center}
+.row3 button{background:var(--bg);font-size:24px;padding:0}
+.row3 input{width:100%;min-width:0;accent-color:var(--accent)}
+.strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.strip button{flex:0 0 60px;padding:0;min-height:0;border:2px solid transparent;border-radius:8px;overflow:hidden;background:none}
+.strip button[aria-current="true"]{border-color:var(--accent)}
+.strip img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 .thumbs button{min-height:40px;padding:4px;font-size:14px;background:var(--bg)}
 .fld input[type=date],.fld input[type=file]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:46px;color:var(--ink);font-size:15px;width:100%;min-width:0}
 .week{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:15px;flex-wrap:wrap}
@@ -566,6 +575,12 @@ function shrink(file){return new Promise((res,rej)=>{const img=new Image(),u=URL
  img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};img.src=u})}
 async function phAdd(file,date){const blob=await shrink(file),p={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date,blob};await phTx('readwrite',s=>s.put(p));
  if(!PH)PH=[];PH.push(Object.assign({url:URL.createObjectURL(blob)},p));phSort();try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
+let phIdx=-1;
+async function phSetDate(id,date){const p=PH.find(x=>x.id===id);if(!p||!date)return;p.date=date;await phTx('readwrite',s=>s.put({id:p.id,date:p.date,blob:p.blob}));phSort()}
+function phCap(i){const p=PH[i],d=Math.round((new Date(p.date)-new Date(PH[0].date))/864e5);return `${i+1} af ${PH.length} · ${phDate(p.date)}${i?` · dag ${d}`:' · start'}`}
+function phShow(i){if(!PH||!PH.length)return;phIdx=Math.max(0,Math.min(PH.length-1,i));const g=document.getElementById('ph-big');if(!g)return;g.src=PH[phIdx].url;
+ document.getElementById('ph-cap').textContent=phCap(phIdx);document.getElementById('ph-range').value=phIdx;
+ document.querySelectorAll('.strip button').forEach((b,k)=>{b.setAttribute('aria-current',k===phIdx);if(k===phIdx&&b.scrollIntoView)b.scrollIntoView({block:'nearest',inline:'center'})})}
 async function phDel(id){await phTx('readwrite',s=>s.delete(id));const i=PH.findIndex(p=>p.id===id);if(i>=0){URL.revokeObjectURL(PH[i].url);PH.splice(i,1)}}
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const phDate=s=>new Date(s+'T12:00').toLocaleDateString('da-DK',{day:'numeric',month:'short',year:'numeric'});
@@ -579,11 +594,16 @@ function photosHtml(){const head='<header class="stack"><h1>Billeder</h1><p clas
    <p class="hint">${days===0?'Samme dag.':days+(days===1?' dag':' dage')+' imellem.'}</p></div>`
   :PH.length===1?`<div class="panel"><div class="cmp"><img src="${a.url}" alt="Billede fra ${phDate(a.date)}"><p class="hint">Dit første billede, ${phDate(a.date)}. Læg ét mere ind senere, så vises de to side om side.</p></div></div>`
   :'<div class="panel"><p>Ingen billeder endnu. Tag et billede i dag som dit “før”, og læg et nyt ind om nogle uger.</p></div>';
- return head+(phErr?'<p class="note">Browseren tillader ikke at gemme billeder her, f.eks. i et privat vindue.</p>':'')+cmp+`
- <div class="panel"><h3>Tilføj billede</h3><div class="row"><label class="fld"><span>Dato</span><input type="date" id="ph-date" value="${today()}" max="${today()}"></label>
-  <label class="fld"><span>Tag eller vælg et billede</span><input type="file" id="ph-file" accept="image/*"></label></div>
-  <p class="hint">Brug samme sted, lys og stilling hver gang, så er forskellen lettere at se. Vælg en tidligere dato, hvis billedet er ældre.</p></div>
- ${PH.length?`<div class="panel"><h3>Alle billeder</h3><div class="thumbs">${PH.slice().reverse().map(p=>`<figure><img src="${p.url}" alt="Billede fra ${phDate(p.date)}"><figcaption>${phDate(p.date)}</figcaption><button type="button" class="danger" data-act="phdel" data-id="${p.id}">Slet</button></figure>`).join('')}</div></div>`:''}
+ const n=PH.length;if(phIdx<0||phIdx>=n)phIdx=n-1;
+ const flow=n>=2?`<div class="panel"><h3>Forløbet</h3><img id="ph-big" class="big-ph" src="${PH[phIdx].url}" alt="Billede i forløbet"><p class="phcap" id="ph-cap">${phCap(phIdx)}</p>
+  <div class="row3"><button type="button" data-act="phstep" data-d="-1" aria-label="Forrige billede">‹</button><input type="range" id="ph-range" min="0" max="${n-1}" step="1" value="${phIdx}" aria-label="Vælg billede i forløbet"><button type="button" data-act="phstep" data-d="1" aria-label="Næste billede">›</button></div>
+  <div class="strip">${PH.map((p,i)=>`<button type="button" data-act="phgo" data-i="${i}" aria-current="${i===phIdx}" aria-label="Vis billede fra ${phDate(p.date)}"><img src="${p.url}" alt=""></button>`).join('')}</div>
+  <p class="hint">Træk i skyderen, eller tryk på et billede, for at gå gennem hele forløbet fra start til nu.</p></div>`:'';
+ return head+(phErr?'<p class="note">Browseren tillader ikke at gemme billeder her, f.eks. i et privat vindue.</p>':'')+flow+cmp+`
+ <div class="panel"><h3>Tilføj billeder</h3><div class="row"><label class="fld"><span>Dato</span><input type="date" id="ph-date" value="${today()}" max="${today()}"></label>
+  <label class="fld"><span>Tag eller vælg billeder</span><input type="file" id="ph-file" accept="image/*" multiple></label></div>
+  <p class="hint">Vælger du ét billede, får det datoen ovenfor. Vælger du flere på én gang, får hvert billede sin egen dato fra filen; du kan rette datoen under billedet bagefter. Brug samme sted, lys og stilling hver gang.</p></div>
+ ${n?`<div class="panel"><h3>Alle billeder</h3><div class="thumbs">${PH.slice().reverse().map(p=>`<figure><img src="${p.url}" alt="Billede fra ${phDate(p.date)}"><input type="date" data-phd="${p.id}" value="${p.date}" max="${today()}" aria-label="Dato for billedet"><button type="button" class="danger" data-act="phdel" data-id="${p.id}">Slet</button></figure>`).join('')}</div></div>`:''}
  <p class="hint">Billederne ligger kun i denne browser på denne enhed. De er ikke med i eksporten af historikken og forsvinder, hvis appens data slettes eller appen fjernes. Gem selv de originale billeder i telefonens galleri.</p>`}
 
 /* ---------- visninger ---------- */
@@ -772,6 +792,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='remics'){dl('kettlebell-paamindelse.ics',remIcs(),'text/calendar');toast('Åbn filen for at lægge alarmen i kalenderen')}
  else if(a==='cadd'||a==='cdel'){const c=DB.settings.p8;if(a==='cadd')c.items.push({ex:'squat',mode:'reps',n:10,w:'Kropsvægt'});else c.items.splice(+b.dataset.i,1);ui.cfg=true;persist();const y=window.scrollY;render();window.scrollTo(0,y)}
  else if(a==='sugYes'||a==='sugNo'){const sg=suggestion();if(sg){if(a==='sugYes'&&sg.apply){sg.apply();toast('Ændret. Du kan altid skifte tilbage under Indstillinger.')}DB.settings.sug=Object.assign({},DB.settings.sug,{[DB.settings.pid]:sg.id});persist();render()}}
+ else if(a==='phstep'){phShow(phIdx+ +b.dataset.d)}
+ else if(a==='phgo'){phShow(+b.dataset.i)}
  else if(a==='phdel'){twoTap('ph'+b.dataset.id,b,'Tryk igen for at slette',async()=>{try{await phDel(b.dataset.id)}catch(er){toast('Kunne ikke slette billedet')}render()})}
  else if(a==='easier'){makeEasier()}
  else if(a==='repeat'){audio();say(instruction(true))}
@@ -787,10 +809,13 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='copy'){const io=document.getElementById('io');if(!io.value)io.value=exportText();try{await navigator.clipboard.writeText(io.value);toast('Kopieret')}catch(er){io.focus();io.select();toast('Markér og kopiér teksten selv')}}
  else if(a==='import'){importText(document.getElementById('io').value)}
 });
+document.addEventListener('input',e=>{if(e.target.id==='ph-range')phShow(+e.target.value)});
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.ui;if(k)ui[k]=e.target.open},true);
 document.addEventListener('change',async e=>{const t=e.target;
- if(t.id==='ph-file'){const f=t.files&&t.files[0];if(!f)return;const d=(document.getElementById('ph-date')||{}).value||today();
-  try{await phAdd(f,d);phSel.a=phSel.b='';toast('Billede gemt på denne enhed')}catch(er){toast('Billedet kunne ikke gemmes. Prøv et andet billede.')}if(view==='photos')render();return}
+ if(t.id==='ph-file'){const fs=[...(t.files||[])];if(!fs.length)return;const d=(document.getElementById('ph-date')||{}).value||today(),ymd=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  let ok=0;for(const f of fs){try{let fd=d;if(fs.length>1&&f.lastModified){fd=ymd(new Date(f.lastModified));if(fd>today())fd=today()}await phAdd(f,fd);ok++}catch(er){}}
+  phSel.a=phSel.b='';phIdx=-1;toast(ok?(ok===1?'1 billede gemt':ok+' billeder gemt')+' på denne enhed'+(ok<fs.length?', '+(fs.length-ok)+' kunne ikke læses':''):'Billedet kunne ikke gemmes. Prøv et andet.');if(view==='photos')render();return}
+ if(t.dataset&&t.dataset.phd){try{await phSetDate(t.dataset.phd,t.value)}catch(er){toast('Datoen kunne ikke gemmes')}phSel.a=phSel.b='';const y=window.scrollY;render();window.scrollTo(0,y);return}
  if(t.dataset&&t.dataset.ph){phSel[t.dataset.ph]=t.value;const y=window.scrollY;render();window.scrollTo(0,y);return}
  if(t.id==='ph-date')return;if(t.id==='impfile'&&t.files[0]){const r=new FileReader();r.onload=()=>importText(String(r.result));r.readAsText(t.files[0]);return}
  const p=t.dataset&&t.dataset.cfg;if(!p)return;let v=t.type==='checkbox'?t.checked:t.value;if(/(rest|rounds|goal|\.n)$/.test(p))v=+v;if(t.type==='text')v=String(v).trim().slice(0,30)||'Mit program';setPath(DB.settings,p,v);
