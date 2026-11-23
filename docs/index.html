@@ -76,6 +76,13 @@ button:disabled{opacity:.5;cursor:default}
 .pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor;align-self:flex-start}
 .pill.ok{color:var(--ok)} .pill.part{color:var(--rest)} .pill.acc{color:var(--accent)}
 .fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);min-width:0}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}
+.cmp img,.thumbs img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:var(--bg);display:block}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.thumbs figure{margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.thumbs figcaption{font-size:13px;color:var(--muted)}
+.thumbs button{min-height:40px;padding:4px;font-size:14px;background:var(--bg)}
+.fld input[type=date],.fld input[type=file]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:46px;color:var(--ink);font-size:15px;width:100%;min-width:0}
 .week{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:15px;flex-wrap:wrap}
 .week b{color:var(--ink)}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block;margin-right:4px}
@@ -153,7 +160,7 @@ textarea{min-height:90px;resize:vertical}
 #tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;
   padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:5}
 #tabs div{display:flex;gap:6px;width:100%;max-width:540px}
-#tabs button{flex:1;border:none;background:none;min-height:52px;color:var(--muted)}
+#tabs button{flex:1;border:none;background:none;min-height:52px;color:var(--muted);padding:12px 2px;font-size:15px;min-width:0}
 #tabs button[aria-current="page"]{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent);border-radius:0}
 #toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;z-index:20;max-width:90%;text-align:center}
 </style>
@@ -162,6 +169,7 @@ textarea{min-height:90px;resize:vertical}
 <nav id="tabs" aria-label="Sektioner"><div>
   <button data-act="tab" data-v="home">Træning</button>
   <button data-act="tab" data-v="history">Historik</button>
+  <button data-act="tab" data-v="photos">Billeder</button>
   <button data-act="tab" data-v="library">Øvelser</button>
 </div></nav>
 <div id="toast" role="status" aria-live="polite" hidden></div>
@@ -230,7 +238,7 @@ function defaults(){const ex={};P2EX.forEach(e=>ex[e[0]]={w:e[0]==='pushups'?'Kr
   p8:{name:'Mit program',rounds:3,rest:60,warm:true,cool:true,items:[{ex:'squat',mode:'reps',n:10,w:'Kropsvægt'},{ex:'pushCounter',mode:'reps',n:8,w:'Kropsvægt'}]}}}
 
 /* HOSTED = installérbar web-app på egen adresse (bygget med build.ps1); ellers Claude-siden */
-const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.22-2028';
+const HOSTED=!!document.querySelector('link[rel="manifest"]'),VERSION='2026.11.23-1549';
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 /* ---------- lagring ---------- */
 const LS='kb-traening-v1';
@@ -558,11 +566,42 @@ function suggestion(){const st=DB.settings,pid=st.pid,L=DB.sessions.filter(s=>s.
  else t='Vælg en tungere vægt eller flere runder under Indstillinger.';
  return{id:L[0].id,t,apply}}
 
+/* ---------- før/efter-billeder: ligger kun i denne browsers egen database, sendes ingen steder hen ---------- */
+let PH=null,phErr=false;const phSel={a:'',b:''};
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('mkfit',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function phTx(mode,fn){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('photos',mode),q=fn(t.objectStore('photos'));t.oncomplete=()=>{d.close();res(q&&q.result)};t.onerror=t.onabort=()=>{d.close();rej(t.error)}})}
+const phSort=()=>PH.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id<b.id?-1:1);
+async function phLoad(){try{const l=await phTx('readonly',s=>s.getAll());PH=(l||[]).map(p=>Object.assign(p,{url:URL.createObjectURL(p.blob)}));phSort()}catch(e){PH=[];phErr=true}}
+function shrink(file){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const k=Math.min(1,1400/Math.max(img.width,img.height)),c=document.createElement('canvas');
+  c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',.82)};
+ img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};img.src=u})}
+async function phAdd(file,date){const blob=await shrink(file),p={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date,blob};await phTx('readwrite',s=>s.put(p));
+ if(!PH)PH=[];PH.push(Object.assign({url:URL.createObjectURL(blob)},p));phSort();try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}}
+async function phDel(id){await phTx('readwrite',s=>s.delete(id));const i=PH.findIndex(p=>p.id===id);if(i>=0){URL.revokeObjectURL(PH[i].url);PH.splice(i,1)}}
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const phDate=s=>new Date(s+'T12:00').toLocaleDateString('da-DK',{day:'numeric',month:'short',year:'numeric'});
+function photosHtml(){const head='<header class="stack"><h1>Billeder</h1><p class="sub">Før og efter. Billederne bliver på denne enhed og sendes ingen steder hen.</p></header>';
+ if(PH===null){phLoad().then(()=>{if(view==='photos')render()});return head+'<p class="hint">Henter billeder …</p>'}
+ const a=PH.find(p=>p.id===phSel.a)||PH[0],b=PH.find(p=>p.id===phSel.b)||PH[PH.length-1],opt=cur=>PH.map(p=>`<option value="${p.id}"${p===cur?' selected':''}>${phDate(p.date)}</option>`).join('');
+ const days=a&&b?Math.round(Math.abs(new Date(b.date)-new Date(a.date))/864e5):0;
+ const cmp=PH.length>=2?`<div class="panel"><div class="cmp">
+   <label class="fld"><span>Før</span><select id="ph-a" data-ph="a">${opt(a)}</select><img src="${a.url}" alt="Før-billede fra ${phDate(a.date)}"></label>
+   <label class="fld"><span>Efter</span><select id="ph-b" data-ph="b">${opt(b)}</select><img src="${b.url}" alt="Efter-billede fra ${phDate(b.date)}"></label></div>
+   <p class="hint">${days===0?'Samme dag.':days+(days===1?' dag':' dage')+' imellem.'}</p></div>`
+  :PH.length===1?`<div class="panel"><div class="cmp"><img src="${a.url}" alt="Billede fra ${phDate(a.date)}"><p class="hint">Dit første billede, ${phDate(a.date)}. Læg ét mere ind senere, så vises de to side om side.</p></div></div>`
+  :'<div class="panel"><p>Ingen billeder endnu. Tag et billede i dag som dit “før”, og læg et nyt ind om nogle uger.</p></div>';
+ return head+(phErr?'<p class="note">Browseren tillader ikke at gemme billeder her, f.eks. i et privat vindue.</p>':'')+cmp+`
+ <div class="panel"><h3>Tilføj billede</h3><div class="row"><label class="fld"><span>Dato</span><input type="date" id="ph-date" value="${today()}" max="${today()}"></label>
+  <label class="fld"><span>Tag eller vælg et billede</span><input type="file" id="ph-file" accept="image/*"></label></div>
+  <p class="hint">Brug samme sted, lys og stilling hver gang, så er forskellen lettere at se. Vælg en tidligere dato, hvis billedet er ældre.</p></div>
+ ${PH.length?`<div class="panel"><h3>Alle billeder</h3><div class="thumbs">${PH.slice().reverse().map(p=>`<figure><img src="${p.url}" alt="Billede fra ${phDate(p.date)}"><figcaption>${phDate(p.date)}</figcaption><button type="button" class="danger" data-act="phdel" data-id="${p.id}">Slet</button></figure>`).join('')}</div></div>`:''}
+ <p class="hint">Billederne ligger kun i denne browser på denne enhed. De er ikke med i eksporten af historikken og forsvinder, hvis appens data slettes eller appen fjernes. Gem selv de originale billeder i telefonens galleri.</p>`}
+
 /* ---------- visninger ---------- */
 function render(){const app=document.getElementById('app'),full=view==='workout'||view==='summary';app.className=full?'full':'';document.getElementById('tabs').hidden=full;
  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===view?'page':'false'));
  if(view==='workout')return renderWorkout();
- app.innerHTML=view==='home'?homeHtml():view==='history'?historyHtml():view==='library'?libraryHtml():summaryHtml();mountAnims();window.scrollTo(0,0)}
+ app.innerHTML=view==='home'?homeHtml():view==='history'?historyHtml():view==='photos'?photosHtml():view==='library'?libraryHtml():summaryHtml();mountAnims();window.scrollTo(0,0)}
 function homeHtml(){const st=DB.settings,pid=st.pid;let cfg='';
  if(pid==='p1'){const c=st.p1;cfg=`<div class="row">${sel('p1.dl','Dødløft',['10 kg','14 kg'],c.dl)}${sel('p1.gs','Goblet squat',['10 kg','Uden vægt'],c.gs)}</div>
   <div class="row">${sel('p1.pu','Armbøjninger mod',[['pushCounter','Stabil køkkenbordplade'],['pushWall','Væg']],c.pu)}${sel('p1.rest','Pause mellem runder',[[90,'90 sek.'],[105,'105 sek.'],[120,'120 sek.']],c.rest)}</div>
@@ -744,6 +783,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='remics'){dl('kettlebell-paamindelse.ics',remIcs(),'text/calendar');toast('Åbn filen for at lægge alarmen i kalenderen')}
  else if(a==='cadd'||a==='cdel'){const c=DB.settings.p8;if(a==='cadd')c.items.push({ex:'squat',mode:'reps',n:10,w:'Kropsvægt'});else c.items.splice(+b.dataset.i,1);ui.cfg=true;persist();const y=window.scrollY;render();window.scrollTo(0,y)}
  else if(a==='sugYes'||a==='sugNo'){const sg=suggestion();if(sg){if(a==='sugYes'&&sg.apply){sg.apply();toast('Ændret. Du kan altid skifte tilbage under Indstillinger.')}DB.settings.sug=Object.assign({},DB.settings.sug,{[DB.settings.pid]:sg.id});persist();render()}}
+ else if(a==='phdel'){twoTap('ph'+b.dataset.id,b,'Tryk igen for at slette',async()=>{try{await phDel(b.dataset.id)}catch(er){toast('Kunne ikke slette billedet')}render()})}
  else if(a==='easier'){makeEasier()}
  else if(a==='repeat'){audio();say(instruction(true))}
  else if(a==='resumeSaved'){S=pending.S;pending=null;S.status=S.finished?'done':'paused';view=S.finished?'summary':'workout';render()}
@@ -759,7 +799,11 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]
  else if(a==='import'){importText(document.getElementById('io').value)}
 });
 document.addEventListener('toggle',e=>{const k=e.target.dataset&&e.target.dataset.ui;if(k)ui[k]=e.target.open},true);
-document.addEventListener('change',e=>{const t=e.target;if(t.id==='impfile'&&t.files[0]){const r=new FileReader();r.onload=()=>importText(String(r.result));r.readAsText(t.files[0]);return}
+document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id==='ph-file'){const f=t.files&&t.files[0];if(!f)return;const d=(document.getElementById('ph-date')||{}).value||today();
+  try{await phAdd(f,d);phSel.a=phSel.b='';toast('Billede gemt på denne enhed')}catch(er){toast('Billedet kunne ikke gemmes. Prøv et andet billede.')}if(view==='photos')render();return}
+ if(t.dataset&&t.dataset.ph){phSel[t.dataset.ph]=t.value;const y=window.scrollY;render();window.scrollTo(0,y);return}
+ if(t.id==='ph-date')return;if(t.id==='impfile'&&t.files[0]){const r=new FileReader();r.onload=()=>importText(String(r.result));r.readAsText(t.files[0]);return}
  const p=t.dataset&&t.dataset.cfg;if(!p)return;let v=t.type==='checkbox'?t.checked:t.value;if(/(rest|rounds|goal|\.n)$/.test(p))v=+v;if(t.type==='text')v=String(v).trim().slice(0,30)||'Mit program';setPath(DB.settings,p,v);
  const mm=/^p8\.items\.(\d+)\.mode$/.exec(p);if(mm)DB.settings.p8.items[+mm[1]].n=v==='time'?30:10;
  if(p==='p2.rowVar'&&v!=='en')DB.settings.p2.rowCount='';if(p==='p2.cleanVar'&&v!=='en')DB.settings.p2.cleanCount='';
